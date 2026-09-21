@@ -2,44 +2,35 @@ import nodemailer from 'nodemailer';
 import config from './env.js';
 
 let transporter = null;
-const isSmtpConfigured = Boolean(
-  (config.emailService || config.smtpHost) && config.smtpUser && config.smtpPass
-);
+const isSmtpConfigured = Boolean(config.smtpUser && config.smtpPass);
 
 if (isSmtpConfigured) {
   try {
-    const transportOptions = config.emailService
-      ? {
-          service: config.emailService,
-          auth: {
-            user: config.smtpUser,
-            pass: config.smtpPass,
-          },
-        }
-      : {
-          host: config.smtpHost,
-          port: config.smtpPort,
-          secure: config.smtpPort === 465,
-          auth: {
-            user: config.smtpUser,
-            pass: config.smtpPass,
-          },
-          pool: true,
-          maxConnections: 5,
-          maxMessages: 100,
-        };
+    const port = Number(config.smtpPort) || 587;
+    const isSecure = port === 465;
 
-    transporter = nodemailer.createTransport(transportOptions);
+    transporter = nodemailer.createTransport({
+      host: config.smtpHost || 'smtp.gmail.com',
+      port,
+      secure: isSecure, // false for 587 (STARTTLS), true for 465
+      auth: {
+        user: config.smtpUser,
+        pass: config.smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
 
-    const providerName = config.emailService ? config.emailService.toUpperCase() : config.smtpHost;
+    const hostName = config.smtpHost || 'smtp.gmail.com';
 
     // Verify SMTP connection in background without blocking startup
     transporter.verify((error) => {
       if (error) {
-        console.warn(`⚠️ [SMTP Engine] Connection verification failed (${providerName}):`, error.message);
+        console.warn(`⚠️ [SMTP Engine] Connection verification failed (${hostName}):`, error.message);
         console.warn('⚠️ [SMTP Engine] Fallback console preview will be used upon delivery errors.');
       } else {
-        console.log(`✅ [SMTP Engine] Connected successfully to ${providerName} (${config.smtpUser})`);
+        console.log(`✅ [SMTP Engine] Connected successfully to ${hostName} (${config.smtpUser})`);
       }
     });
   } catch (err) {

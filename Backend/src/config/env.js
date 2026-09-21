@@ -26,8 +26,8 @@ const config = {
     rateLimitMaxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
     // Email / SMTP Settings
     emailService: process.env.EMAIL_SERVICE || process.env.SMTP_SERVICE || '',
-    smtpHost: process.env.SMTP_HOST || (process.env.EMAIL_SERVICE === 'gmail' ? 'smtp.gmail.com' : ''),
-    smtpPort: Number(process.env.SMTP_PORT) || (process.env.EMAIL_SERVICE === 'gmail' ? 465 : 587),
+    smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+    smtpPort: Number(process.env.SMTP_PORT) || 587,
     smtpUser: (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim(),
     smtpPass: (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, ''),
     fromEmail: (process.env.FROM_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || 'orders@kiranahub.local').trim(),
