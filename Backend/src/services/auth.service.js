@@ -208,7 +208,7 @@ const googleAuth = async ({ credential }) => {
   } else {
     // Auto-create new customer user via Google OAuth
     isNewUser = true;
-    user = await User.create({
+    const newUserData = {
       name: name?.trim() || normalizedEmail.split('@')[0],
       email: normalizedEmail,
       googleId,
@@ -216,7 +216,12 @@ const googleAuth = async ({ credential }) => {
       authProvider: 'google',
       role: 'customer',
       isActive: true,
-    });
+      isVerified: true,
+    };
+    // Strictly omit phone so MongoDB sparse index is not polluted with null/empty values
+    delete newUserData.phone;
+
+    user = await User.create(newUserData);
 
     // Trigger customer welcome email in background
     sendEmail({
@@ -317,6 +322,9 @@ const sendRegistrationOtp = async ({ name, email, phone, password, channel = 'sm
     },
     { upsert: true, new: true }
   );
+
+  // Fallback log inside OTP workflow so OTP is always accessible in Render console
+  console.log('Generated OTP for', normalizedEmail || cleanPhone, ':', rawOtp);
 
   // 6. Non-blocking dispatch via chosen channel
   if (channel === 'email') {
@@ -492,6 +500,9 @@ const sendForgotPasswordOtp = async ({ identifier, channel = 'sms' }) => {
     },
     { upsert: true, new: true }
   );
+
+  // Fallback log inside OTP workflow so OTP is always accessible in Render console
+  console.log('Generated OTP for', user.email || targetIdentifier, ':', rawOtp);
 
   if (targetChannel === 'email') {
     sendEmail({

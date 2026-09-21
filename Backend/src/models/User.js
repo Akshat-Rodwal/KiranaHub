@@ -46,12 +46,12 @@ const userSchema = new mongoose.Schema(
         'Phone number is required for local accounts',
       ],
       sparse: true,
+      unique: true,
       trim: true,
       match: [
         /^(?:(?:\+91|91)[6-9]\d{9}|[6-9]\d{9})$/,
         'Please enter a valid 10-digit mobile number',
       ],
-      index: true,
     },
     passwordHash: {
       type: String,

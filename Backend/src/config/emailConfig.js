@@ -1,28 +1,35 @@
 import nodemailer from 'nodemailer';
 import config from './env.js';
 
-let transporter = null;
-const isSmtpConfigured = Boolean(config.smtpUser && config.smtpPass);
+const isSmtpConfigured = Boolean(
+  (config.smtpUser || process.env.EMAIL_USER) &&
+  (config.smtpPass || process.env.EMAIL_PASS)
+);
+
+export let transporter = null;
 
 if (isSmtpConfigured) {
   try {
-    const port = Number(config.smtpPort) || 587;
-    const isSecure = port === 465;
-
     transporter = nodemailer.createTransport({
-      host: config.smtpHost || 'smtp.gmail.com',
-      port,
-      secure: isSecure, // false for 587 (STARTTLS), true for 465
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // TLS / STARTTLS
+      requireTLS: true,
       auth: {
-        user: config.smtpUser,
-        pass: config.smtpPass,
+        user: config.smtpUser || process.env.EMAIL_USER,
+        pass: (config.smtpPass || process.env.EMAIL_PASS || '').replace(/\s+/g, ''),
       },
       tls: {
         rejectUnauthorized: false,
+        ciphers: 'SSLv3',
       },
+      pool: true,
+      maxConnections: 3,
+      socketTimeout: 30000,
     });
 
-    const hostName = config.smtpHost || 'smtp.gmail.com';
+    const hostName = 'smtp.gmail.com';
+    const smtpUser = config.smtpUser || process.env.EMAIL_USER;
 
     // Verify SMTP connection in background without blocking startup
     transporter.verify((error) => {
@@ -30,7 +37,7 @@ if (isSmtpConfigured) {
         console.warn(`⚠️ [SMTP Engine] Connection verification failed (${hostName}):`, error.message);
         console.warn('⚠️ [SMTP Engine] Fallback console preview will be used upon delivery errors.');
       } else {
-        console.log(`✅ [SMTP Engine] Connected successfully to ${hostName} (${config.smtpUser})`);
+        console.log(`✅ [SMTP Engine] Connected successfully to ${hostName} (${smtpUser})`);
       }
     });
   } catch (err) {
