@@ -6,7 +6,12 @@ const resendApiKey = config.resendApiKey || process.env.RESEND_API_KEY;
 export const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
 
 if (resendClient) {
-  console.log('✅ [Email Engine] Resend HTTP API client configured as primary provider.');
+  console.log('✅ [Email Engine] Resend HTTP API client configured.');
+}
+
+const brevoApiKey = config.brevoApiKey || process.env.BREVO_API_KEY;
+if (brevoApiKey) {
+  console.log('✅ [Email Engine] Brevo REST API v3 configured as primary provider.');
 }
 
 const isSmtpConfigured = Boolean(
@@ -71,7 +76,41 @@ export const sendEmail = async ({ to, subject, html, text }) => {
     return { success: false, error: 'Recipient address required' };
   }
 
-  // Primary Provider: Resend HTTP API (Port 443 HTTPS - avoids SMTP blocks on cloud hosts like Render)
+  // Primary Provider: Brevo REST API v3 (Port 443 HTTPS - Unrestricted recipients & Render cloud compatible)
+  const brevoKey = process.env.BREVO_API_KEY || config.brevoApiKey;
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || config.brevoSenderEmail || process.env.EMAIL_USER;
+
+  if (brevoKey) {
+    try {
+      const recipientList = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: config.fromName || 'KiranaHub', email: senderEmail },
+          to: recipientList,
+          subject,
+          htmlContent: html || `<p>${text || ''}</p>`,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log('✅ [Brevo API] Email delivered successfully:', data);
+        return { success: true, data, messageId: data?.messageId };
+      } else {
+        console.error('❌ [Brevo API] Error response:', data);
+      }
+    } catch (err) {
+      console.error('❌ [Brevo API] Request failed:', err.message);
+    }
+  }
+
+  // Secondary Provider: Resend HTTP API (Port 443 HTTPS - avoids SMTP blocks on cloud hosts like Render)
   if (resendClient) {
     try {
       const { data, error } = await resendClient.emails.send({

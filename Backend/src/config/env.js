@@ -34,6 +34,9 @@ const config = {
     fromName: process.env.FROM_NAME || 'KiranaHub Fresh',
     // Resend HTTP API Email Settings
     resendApiKey: process.env.RESEND_API_KEY || '',
+    // Brevo REST API v3 Settings
+    brevoApiKey: process.env.BREVO_API_KEY || '',
+    brevoSenderEmail: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'modiakshat130@gmail.com',
     // Google OAuth Settings
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
 };
