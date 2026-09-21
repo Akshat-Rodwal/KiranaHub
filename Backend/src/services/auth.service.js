@@ -194,16 +194,24 @@ const googleAuth = async ({ credential }) => {
     }
 
     let modified = false;
-    if (!user.googleId && googleId) {
+    if (!user.googleId) {
       user.googleId = googleId;
+      if (user.authProvider === 'local') {
+        user.authProvider = 'google';
+      }
       modified = true;
     }
-    if (!user.avatar && picture) {
+    if (picture && !user.avatar) {
       user.avatar = picture;
       modified = true;
     }
+    if (!user.isVerified) {
+      user.isVerified = true;
+      modified = true;
+    }
+
     if (modified) {
-      await user.save();
+      await user.save({ validateBeforeSave: false });
     }
   } else {
     // Auto-create new customer user via Google OAuth
@@ -221,16 +229,34 @@ const googleAuth = async ({ credential }) => {
     // Strictly omit phone so MongoDB sparse index is not polluted with null/empty values
     delete newUserData.phone;
 
-    user = await User.create(newUserData);
+    try {
+      user = await User.create(newUserData);
 
-    // Trigger customer welcome email in background
-    sendEmail({
-      to: user.email,
-      subject: 'Welcome to KiranaHub! ⚡ Instant 10-Minute Grocery Delivery',
-      html: getWelcomeEmailTemplate({ name: user.name, promoCode: 'FIRST50' }),
-    }).catch((err) => {
-      console.warn('[Welcome Email Notice] Background email notice:', err?.message);
-    });
+      // Trigger customer welcome email in background
+      sendEmail({
+        to: user.email,
+        subject: 'Welcome to KiranaHub! ⚡ Instant 10-Minute Grocery Delivery',
+        html: getWelcomeEmailTemplate({ name: user.name, promoCode: 'FIRST50' }),
+      }).catch((err) => {
+        console.warn('[Welcome Email Notice] Background email notice:', err?.message);
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        // Fallback: If concurrent creation or duplicate key occurred, link existing user
+        user = await User.findOne({ email: normalizedEmail });
+        if (user) {
+          if (!user.googleId) user.googleId = googleId;
+          if (picture && !user.avatar) user.avatar = picture;
+          if (!user.isVerified) user.isVerified = true;
+          await user.save({ validateBeforeSave: false });
+          isNewUser = false;
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
   }
 
   const accessToken = user.generateAccessToken();
