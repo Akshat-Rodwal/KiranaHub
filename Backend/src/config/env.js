@@ -32,6 +32,8 @@ const config = {
     smtpPass: (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, ''),
     fromEmail: (process.env.FROM_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || 'orders@kiranahub.local').trim(),
     fromName: process.env.FROM_NAME || 'KiranaHub Fresh',
+    // Resend HTTP API Email Settings
+    resendApiKey: process.env.RESEND_API_KEY || '',
     // Google OAuth Settings
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
 };

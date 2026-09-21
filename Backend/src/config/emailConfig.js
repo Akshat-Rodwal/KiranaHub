@@ -1,5 +1,13 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import config from './env.js';
+
+const resendApiKey = config.resendApiKey || process.env.RESEND_API_KEY;
+export const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
+
+if (resendClient) {
+  console.log('✅ [Email Engine] Resend HTTP API client configured as primary provider.');
+}
 
 const isSmtpConfigured = Boolean(
   (config.smtpUser || process.env.EMAIL_USER) &&
@@ -61,6 +69,27 @@ export const sendEmail = async ({ to, subject, html, text }) => {
   if (!to) {
     console.warn('[SMTP Engine] Skipping email dispatch: No recipient specified.');
     return { success: false, error: 'Recipient address required' };
+  }
+
+  // Primary Provider: Resend HTTP API (Port 443 HTTPS - avoids SMTP blocks on cloud hosts like Render)
+  if (resendClient) {
+    try {
+      const { data, error } = await resendClient.emails.send({
+        from: 'KiranaHub <onboarding@resend.dev>',
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html: html || text,
+      });
+
+      if (error) {
+        console.error('❌ [Resend HTTP] Delivery error:', error.message || error);
+      } else {
+        console.log('✅ [Resend HTTP] Email delivered successfully:', data?.id || data);
+        return { success: true, data, messageId: data?.id };
+      }
+    } catch (err) {
+      console.error('❌ [Resend HTTP] Request failed:', err.message);
+    }
   }
 
   const from = `"${config.fromName}" <${config.fromEmail}>`;
