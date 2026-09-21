@@ -34,30 +34,22 @@ const allowedOrigins = [
   config.clientUrl ? config.clientUrl.trim().replace(/\/$/, '') : null,
 ].filter(Boolean);
 
-const corsMiddleware = cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    const normalized = origin.trim().replace(/\/$/, '');
-    if (allowedOrigins.includes(normalized) || origin.endsWith('.vercel.app')) {
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser tools, same-origin, vercel previews, or explicit matches
+    if (!origin || origin.includes('vercel.app') || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(null, true);
+    return callback(null, true); // Permissive fallback so production never blocks client
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-  ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-});
+};
 
-// Ensure CORS middleware is at the top before other middlewares and routes
-app.use(corsMiddleware);
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 const limiter = rateLimit({
   windowMs: config.rateLimitWindowMs * 60 * 1000,
