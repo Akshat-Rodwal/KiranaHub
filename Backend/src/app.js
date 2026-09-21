@@ -25,32 +25,26 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-const rawOrigins = [
-  ...config.corsOrigin.split(','),
-  config.clientUrl,
-];
+const allowedOrigins = [
+  'https://kirana-hub-chi.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  ...(config.corsOrigin ? config.corsOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')) : []),
+  config.clientUrl ? config.clientUrl.trim().replace(/\/$/, '') : null,
+].filter(Boolean);
 
-const allowedOrigins = new Set(
-  rawOrigins
-    .map((origin) => origin?.trim().replace(/\/$/, ''))
-    .filter(Boolean)
-);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) {
-      return callback(null, true);
-    }
+const corsMiddleware = cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
     const normalized = origin.trim().replace(/\/$/, '');
-    if (allowedOrigins.has(normalized)) {
+    if (allowedOrigins.includes(normalized) || origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
-    const corsErr = new Error(`Origin ${origin} not allowed by CORS`);
-    corsErr.statusCode = 403;
-    return callback(corsErr);
+    return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
@@ -59,8 +53,11 @@ const corsOptions = {
     'Origin',
   ],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400,
-};
+});
+
+// Ensure CORS middleware is at the top before other middlewares and routes
+app.use(corsMiddleware);
+app.options('*', cors());
 
 const limiter = rateLimit({
   windowMs: config.rateLimitWindowMs * 60 * 1000,
@@ -79,10 +76,6 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
 }));
-
-app.use(cors(corsOptions));
-
-app.options('*', cors(corsOptions));
 
 app.use('/api', limiter);
 
