@@ -129,7 +129,7 @@ export default function ProductCard({
       )}
     >
       {/* 1. Crisp Centered Image Container with Aspect-Square Padding */}
-      <div className="relative w-full aspect-square bg-slate-50/70 rounded-xl flex items-center justify-center overflow-hidden p-2.5">
+      <div className="relative w-full aspect-square bg-slate-50/60 rounded-xl p-2 flex items-center justify-center overflow-hidden">
         {!imgLoaded && (
           <div className="absolute inset-0 bg-slate-100 animate-pulse" />
         )}

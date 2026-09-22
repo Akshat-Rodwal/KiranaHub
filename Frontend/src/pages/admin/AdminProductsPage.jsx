@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import adminService from '../../services/admin.service.js';
@@ -45,12 +45,25 @@ export default function AdminProductsPage() {
   const [formErrors, setFormErrors] = useState({});
 
   // 1. Fetch Categories for filter & modal dropdown
-  const { data: categoriesRes } = useQuery({
+  const { data: categoriesRes, isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['categories-all'],
     queryFn: () => adminService.getCategories(),
     staleTime: 5 * 60 * 1000,
   });
-  const categories = categoriesRes?.data?.items || categoriesRes?.data || [];
+
+  const categories = useMemo(() => {
+    return (
+      categoriesRes?.data?.categories ||
+      categoriesRes?.categories ||
+      categoriesRes?.data?.items ||
+      categoriesRes?.items ||
+      categoriesRes?.data ||
+      (Array.isArray(categoriesRes) ? categoriesRes : [])
+    );
+  }, [categoriesRes]);
+
+  // Derive active category fallback for modal
+  const defaultCategory = categories[0]?._id || categories[0]?.slug || '';
 
   // 2. Fetch Products
   const {
@@ -134,10 +147,11 @@ export default function AdminProductsPage() {
   const openAddModal = () => {
     setIsEditing(false);
     setEditingProductId(null);
+    const initialCategory = categories[0]?._id || categories[0]?.slug || '';
     setFormData({
       name: '',
       slug: '',
-      category: categories[0]?.slug || categories[0]?._id || '',
+      category: initialCategory,
       unit: '1 pc',
       price: '',
       mrp: '',
@@ -153,7 +167,13 @@ export default function AdminProductsPage() {
   const openEditModal = (product) => {
     setIsEditing(true);
     setEditingProductId(product._id || product.id);
-    const catVal = product.category?.slug || product.category?._id || product.category || '';
+    const catVal =
+      product.category?._id ||
+      product.category?.slug ||
+      (typeof product.category === 'string' ? product.category : '') ||
+      categories[0]?._id ||
+      categories[0]?.slug ||
+      '';
     setFormData({
       name: product.name,
       slug: product.slug,
@@ -541,16 +561,23 @@ export default function AdminProductsPage() {
                 Category *
               </label>
               <select
-                value={formData.category}
+                value={formData.category || defaultCategory}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full rounded-xl border border-border px-3 py-2 text-xs text-text-primary focus:border-brand-500 focus:outline-none"
+                disabled={isCategoriesLoading}
               >
-                <option value="" disabled>Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id || cat.slug} value={cat.slug || cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
+                {isCategoriesLoading ? (
+                  <option value="">Loading categories...</option>
+                ) : (
+                  <>
+                    <option value="" disabled>Select Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id || cat.slug} value={cat._id || cat.slug}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
               {formErrors.category && (
                 <p className="text-[11px] text-danger-600 mt-0.5">{formErrors.category}</p>

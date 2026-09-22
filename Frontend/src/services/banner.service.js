@@ -6,7 +6,7 @@ export const bannerService = {
    * @returns {Promise<Object>}
    */
   async getBanners() {
-    const response = await apiClient.get('/banners');
+    const response = await apiClient.get('/banners?active=true');
     return response.data;
   },
 };

@@ -89,7 +89,7 @@ export default function CategoryCard({
 
       {showLabel && (
         <div className="mt-1.5 text-center min-w-0 w-full px-0.5">
-          <p className="font-medium text-xs text-slate-700 text-center line-clamp-1 group-hover:text-emerald-700 transition-colors">
+          <p className="text-xs font-semibold text-slate-800 text-center line-clamp-1 group-hover:text-emerald-700 transition-colors">
             {name}
           </p>
           {typeof count === 'number' && (

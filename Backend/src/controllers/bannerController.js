@@ -34,7 +34,14 @@ export const ensureDefaultBanners = async () => {
  */
 export const getBanners = asyncHandler(async (req, res) => {
   await ensureDefaultBanners();
-  const banners = await Banner.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean();
+  const filter = {};
+  if (req.query.active === 'false' || req.query.isActive === 'false') {
+    filter.isActive = false;
+  } else {
+    // Default or active=true: only return active banners for customer storefront
+    filter.isActive = true;
+  }
+  const banners = await Banner.find(filter).sort({ order: 1, createdAt: 1 }).lean();
 
   const heroCarousel = banners.filter((b) => b.position === 'hero_carousel');
   const subBanner1 = banners.find((b) => b.position === 'sub_banner_1') || null;

@@ -14,10 +14,29 @@ import {
 
 import Container from '../common/Container.jsx';
 import { toast } from '../common/Toast.jsx';
-import { ROUTES } from '../../constants/index.js';
+import { ROUTES, API_BASE_URL } from '../../constants/index.js';
 import useStoreSettings from '../../hooks/useStoreSettings.js';
 import useBanners from '../../hooks/useBanners.js';
 import heroGroceriesImg from '../../assets/hero-groceries.png';
+
+// Helper to resolve uploaded or absolute banner image URLs cleanly without CORS/broken links
+const resolveBannerImageUrl = (url, fallback) => {
+  if (!url) return fallback;
+  const trimmed = String(url).trim();
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/uploads')) {
+    const backendRoot = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+    return `${backendRoot}${trimmed}`;
+  }
+  return trimmed;
+};
 
 const FALLBACK_SLIDES = [
   {
@@ -28,11 +47,6 @@ const FALLBACK_SLIDES = [
     subtitle: 'Fresh vegetables, dairy, farm eggs & daily pantry essentials rushed directly to your doorstep.',
     ctaText: 'Order Now',
     ctaLink: ROUTES.PRODUCTS,
-    secondaryText: 'Explore Aisles',
-    secondaryLink: ROUTES.CATEGORIES,
-    gradient: 'from-emerald-500/10 via-emerald-100/30 to-teal-50',
-    borderColor: 'border-emerald-200/70',
-    badgeBg: 'bg-emerald-600 text-white',
     image: heroGroceriesImg,
   },
   {
@@ -43,12 +57,7 @@ const FALLBACK_SLIDES = [
     subtitle: 'Unpolished pulses, stone-ground flours, aged basmati rice & cold-pressed oils at everyday wholesale prices.',
     ctaText: 'Shop Deals',
     ctaLink: `${ROUTES.PRODUCTS}?flashDeal=true`,
-    secondaryText: 'View Bestsellers',
-    secondaryLink: `${ROUTES.PRODUCTS}?sort=popular`,
-    gradient: 'from-amber-500/10 via-orange-100/30 to-amber-50',
-    borderColor: 'border-amber-200/70',
-    badgeBg: 'bg-amber-600 text-white',
-    image: heroGroceriesImg,
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
   },
   {
     id: 'welcome-offer',
@@ -59,10 +68,7 @@ const FALLBACK_SLIDES = [
     ctaText: 'Claim Offer',
     ctaLink: ROUTES.PRODUCTS,
     isCouponSlide: true,
-    gradient: 'from-teal-500/10 via-emerald-100/30 to-cyan-50',
-    borderColor: 'border-teal-200/70',
-    badgeBg: 'bg-teal-600 text-white',
-    image: heroGroceriesImg,
+    image: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1400&q=80',
   },
 ];
 
@@ -121,71 +127,91 @@ export default function Hero() {
 
   // Merge dynamic banners from DB with fallbacks
   const carouselSlides = useMemo(() => {
-    if (bannersData?.hero_carousel && bannersData.hero_carousel.length > 0) {
-      return bannersData.hero_carousel.map((b, index) => ({
-        id: b._id || `carousel-${index}`,
+    const rawList =
+      bannersData?.hero_carousel ||
+      (Array.isArray(bannersData)
+        ? bannersData.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
+        : null) ||
+      (Array.isArray(bannersData?.items)
+        ? bannersData.items.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
+        : null) ||
+      (Array.isArray(bannersData?.all)
+        ? bannersData.all.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
+        : null);
+
+    if (rawList && rawList.length > 0) {
+      return rawList.map((b, index) => ({
+        id: b._id || b.id || `carousel-${index}`,
         badge: b.badge || (index === 0 ? '⚡ Instant Hyperlocal Delivery' : '⚡ Featured Deal'),
         badgeIcon: index % 2 === 0 ? Zap : Tag,
         title: b.title,
         subtitle: b.subtitle,
-        ctaText: b.ctaText || 'Order Now',
+        ctaText: b.ctaText || 'Shop Now',
         ctaLink: b.link || ROUTES.PRODUCTS,
-        secondaryText: 'Explore',
-        secondaryLink: ROUTES.CATEGORIES,
-        gradient: b.bgGradient || 'from-emerald-500/10 via-emerald-100/30 to-teal-50',
-        borderColor: 'border-emerald-200/70',
-        badgeBg: 'bg-emerald-600 text-white',
-        image: b.imageUrl || heroGroceriesImg,
-        isCouponSlide: b.title?.toLowerCase().includes('coupon') || b.title?.toLowerCase().includes('first50'),
+        image: resolveBannerImageUrl(b.imageUrl, heroGroceriesImg),
+        isCouponSlide:
+          b.title?.toLowerCase().includes('coupon') ||
+          b.title?.toLowerCase().includes('first50') ||
+          b.subtitle?.toLowerCase().includes('first50'),
       }));
     }
     return FALLBACK_SLIDES;
   }, [bannersData]);
 
-  // Sub-hero promotional tiles (3 columns) with light pastel themes
+  // Sub-hero promotional tiles (3 columns) with light pastel themes & dynamic database sync
   const subHeroTiles = useMemo(() => {
+    const b1 =
+      bannersData?.sub_banner_1 ||
+      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_1') : null);
+    const b2 =
+      bannersData?.sub_banner_2 ||
+      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_2') : null);
+    const b3 =
+      bannersData?.sub_banner_3 ||
+      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_3') : null);
+
     return [
-      bannersData?.sub_banner_1
+      b1
         ? {
-            id: bannersData.sub_banner_1._id || 'sub-1',
-            title: bannersData.sub_banner_1.title,
-            subtitle: bannersData.sub_banner_1.subtitle,
-            imageUrl: bannersData.sub_banner_1.imageUrl,
-            link: bannersData.sub_banner_1.link,
-            ctaText: 'Explore',
+            id: b1._id || b1.id || 'sub-1',
+            title: b1.title,
+            subtitle: b1.subtitle,
+            imageUrl: resolveBannerImageUrl(b1.imageUrl, DEFAULT_SUB_TILES[0].imageUrl),
+            link: b1.link || DEFAULT_SUB_TILES[0].link,
+            ctaText: b1.ctaText || 'Explore',
             bgGradient: 'from-sky-50 to-blue-100',
             borderColor: 'border-sky-200/80',
-            badge: bannersData.sub_banner_1.badge || '💊 Pharma & Wellness',
+            badge: b1.badge || '💊 Pharma & Wellness',
             badgeClass: 'bg-sky-100/90 text-sky-800 border-sky-200',
             btnClass: 'bg-sky-600 hover:bg-sky-700 text-white',
           }
         : DEFAULT_SUB_TILES[0],
-      bannersData?.sub_banner_2
+      b2
         ? {
-            id: bannersData.sub_banner_2._id || 'sub-2',
-            title: bannersData.sub_banner_2.title,
-            subtitle: bannersData.sub_banner_2.subtitle,
-            imageUrl: bannersData.sub_banner_2.imageUrl,
-            link: bannersData.sub_banner_2.link,
-            ctaText: 'Explore',
+            id: b2._id || b2.id || 'sub-2',
+            title: b2.title,
+            subtitle: b2.subtitle,
+            imageUrl: resolveBannerImageUrl(b2.imageUrl, DEFAULT_SUB_TILES[1].imageUrl),
+            link: b2.link || DEFAULT_SUB_TILES[1].link,
+            ctaText: b2.ctaText || 'Explore',
             bgGradient: 'from-amber-50 to-orange-100',
             borderColor: 'border-amber-200/80',
-            badge: bannersData.sub_banner_2.badge || '🐾 Pet Supplies',
+            badge: b2.badge || '🐾 Pet Supplies',
             badgeClass: 'bg-amber-100/90 text-amber-800 border-amber-200',
             btnClass: 'bg-amber-600 hover:bg-amber-700 text-white',
           }
         : DEFAULT_SUB_TILES[1],
-      bannersData?.sub_banner_3
+      b3
         ? {
-            id: bannersData.sub_banner_3._id || 'sub-3',
-            title: bannersData.sub_banner_3.title,
-            subtitle: bannersData.sub_banner_3.subtitle,
-            imageUrl: bannersData.sub_banner_3.imageUrl,
-            link: bannersData.sub_banner_3.link,
-            ctaText: 'Explore',
+            id: b3._id || b3.id || 'sub-3',
+            title: b3.title,
+            subtitle: b3.subtitle,
+            imageUrl: resolveBannerImageUrl(b3.imageUrl, DEFAULT_SUB_TILES[2].imageUrl),
+            link: b3.link || DEFAULT_SUB_TILES[2].link,
+            ctaText: b3.ctaText || 'Explore',
             bgGradient: 'from-pink-50 to-rose-100',
             borderColor: 'border-rose-200/80',
-            badge: bannersData.sub_banner_3.badge || '👶 Baby Care',
+            badge: b3.badge || '👶 Baby Care',
             badgeClass: 'bg-rose-100/90 text-rose-800 border-rose-200',
             btnClass: 'bg-rose-500 hover:bg-rose-600 text-white',
           }
@@ -203,12 +229,12 @@ export default function Hero() {
     setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount);
   }, [slideCount]);
 
-  // 3-Second Auto-Sliding Interval (Paused on user hover)
+  // Auto-sliding interval (paused on user hover)
   useEffect(() => {
     if (isPaused || slideCount <= 1) return;
     const timer = setInterval(() => {
       nextSlide();
-    }, 3500);
+    }, 4000);
     return () => clearInterval(timer);
   }, [isPaused, nextSlide, slideCount]);
 
@@ -229,74 +255,82 @@ export default function Hero() {
   return (
     <section className="bg-[#f7f9f7] pt-2 pb-2 sm:pt-4 sm:pb-4">
       <Container className="px-3 sm:px-6">
-        {/* 1. Main Hero: Soft Fresh Gradient Quick-Commerce Banner */}
+        {/* 1. Full-Bleed Background Image Hero Carousel */}
         <div
-          className={`relative overflow-hidden rounded-2xl md:rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] border ${slide.borderColor || 'border-emerald-200/70'} w-full bg-gradient-to-r ${slide.gradient} transition-colors duration-500`}
+          className="relative w-full h-[220px] sm:h-[300px] md:h-[360px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-stone-900"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="relative overflow-hidden h-48 sm:h-60 md:h-72 lg:h-80 w-full flex items-center px-4 sm:px-8 md:px-12"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+              className="absolute inset-0 w-full h-full flex items-center"
             >
-              {/* Subtle background decorative shapes */}
-              <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-emerald-200/20 blur-3xl pointer-events-none" />
-              <div className="absolute right-1/3 -bottom-10 w-48 h-48 rounded-full bg-teal-200/30 blur-2xl pointer-events-none" />
+              {/* Full-Bleed Background Image */}
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="absolute inset-0 w-full h-full object-cover object-center -z-10"
+                loading="eager"
+              />
 
-              {/* Left Content Column (relative z-10) */}
-              <div className="relative z-10 py-4 sm:py-6 max-w-lg md:max-w-xl text-left">
+              {/* High-Contrast Readability Gradient Overlay on Left */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+
+              {/* Text & CTA Content Layer */}
+              <div className="relative z-10 p-5 sm:p-8 md:p-12 max-w-xl text-left">
                 {slide.badge && (
-                  <div className={`inline-flex items-center gap-1.5 rounded-full ${slide.badgeBg || 'bg-emerald-600 text-white'} px-3 py-1 text-[11px] sm:text-xs font-black shadow-xs mb-2 sm:mb-3`}>
-                    <BadgeIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white backdrop-blur-md px-3 py-1 text-[11px] sm:text-xs font-black shadow-xs mb-2 sm:mb-3 border border-emerald-400/30">
+                    <BadgeIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                     <span>{slide.badge}</span>
                   </div>
                 )}
 
-                <h1 className="font-display text-xl sm:text-3xl md:text-4xl lg:text-[42px] font-black tracking-tight leading-[1.12] text-slate-900 drop-shadow-2xs line-clamp-2">
+                <h1 className="font-display text-xl sm:text-3xl md:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white drop-shadow-md line-clamp-2">
                   {slide.title}
                 </h1>
 
                 {slide.subtitle && (
-                  <p className="mt-1.5 sm:mt-2.5 text-xs sm:text-sm md:text-base text-slate-600 font-medium leading-relaxed max-w-md line-clamp-2">
+                  <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-stone-100 font-medium leading-relaxed drop-shadow-sm max-w-lg line-clamp-2">
                     {slide.subtitle}
                   </p>
                 )}
 
                 {/* Call-to-Action Group */}
-                <div className="mt-3.5 sm:mt-5 flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+                <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     to={slide.ctaLink}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 px-5 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-black text-white shadow-md shadow-emerald-600/25 transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c831f] hover:bg-[#0a6d1a] px-5 py-2 sm:px-7 sm:py-3 text-xs sm:text-sm font-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span>{slide.ctaText}</span>
-                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2.4} />
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
                   </Link>
 
                   {slide.isCouponSlide && (
                     <button
                       type="button"
                       onClick={handleCopyPromo}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-white/90 hover:bg-white px-3.5 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs font-bold text-slate-800 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/45 hover:bg-black/65 px-4 py-2 sm:px-4 sm:py-2.5 text-xs font-bold text-white backdrop-blur-md transition-colors cursor-pointer shadow-md"
                       title="Click to copy voucher code"
                     >
-                      <span className="text-slate-500">Code:</span>
-                      <strong className="font-mono text-emerald-700 tracking-wider font-extrabold">
+                      <span className="text-stone-300">Code:</span>
+                      <strong className="font-mono text-emerald-300 tracking-wider font-extrabold">
                         {promoCode}
                       </strong>
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 text-[9px] uppercase font-bold tracking-wide">
+                      <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[9px] uppercase font-bold tracking-wide">
                         {copied ? (
                           <>
-                            <Check className="h-2.5 w-2.5 text-emerald-600" strokeWidth={2.5} />
+                            <Check className="h-2.5 w-2.5 text-emerald-400" strokeWidth={2.5} />
                             <span>Copied</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="h-2.5 w-2.5 text-slate-500" strokeWidth={2} />
+                            <Copy className="h-2.5 w-2.5 text-stone-200" strokeWidth={2} />
                             <span>Copy</span>
                           </>
                         )}
@@ -304,18 +338,6 @@ export default function Hero() {
                     </button>
                   )}
                 </div>
-              </div>
-
-              {/* Right Cut-out 3D Illustration / Fresh Produce Layer with float effect */}
-              <div className="hidden sm:flex absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 h-[85%] max-h-64 md:max-h-72 items-center justify-center pointer-events-none">
-                <motion.img
-                  animate={reduceMotion ? {} : { y: [0, -8, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  src={slide.image}
-                  alt={slide.title}
-                  className="h-full w-auto object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.12)]"
-                  loading="eager"
-                />
               </div>
             </motion.div>
           </AnimatePresence>
@@ -327,21 +349,21 @@ export default function Hero() {
                 type="button"
                 onClick={prevSlide}
                 aria-label="Previous Slide"
-                className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 h-8 w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-slate-950 shadow-md border border-slate-100 transition-all cursor-pointer hover:scale-105"
+                className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 transition-all cursor-pointer hover:scale-110"
               >
-                <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+                <ChevronLeft className="h-5 w-5" strokeWidth={2.4} />
               </button>
               <button
                 type="button"
                 onClick={nextSlide}
                 aria-label="Next Slide"
-                className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 h-8 w-8 items-center justify-center rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-slate-950 shadow-md border border-slate-100 transition-all cursor-pointer hover:scale-105"
+                className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 transition-all cursor-pointer hover:scale-110"
               >
-                <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+                <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
               </button>
 
               {/* Bottom Pagination Indicators (Pill Dashes) */}
-              <div className="absolute bottom-2.5 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
                 {carouselSlides.map((s, index) => {
                   const isActive = index === activeSlideIndex;
                   return (
@@ -352,8 +374,8 @@ export default function Hero() {
                       aria-label={`Go to slide ${index + 1}`}
                       className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                         isActive
-                          ? 'w-6 bg-emerald-600 shadow-xs'
-                          : 'w-2 bg-slate-300/80 hover:bg-slate-400'
+                          ? 'w-7 bg-white shadow-md'
+                          : 'w-2 bg-white/45 hover:bg-white/70'
                       }`}
                     />
                   );
