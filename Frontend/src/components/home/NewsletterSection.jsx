@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 import Container from '../common/Container.jsx';
 import Button from '../common/Button.jsx';
@@ -24,7 +25,13 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="py-6 lg:py-10">
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="py-6 lg:py-10"
+    >
       <Container>
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 px-5 py-10 text-center sm:px-10">
           <div className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-white/10" />
@@ -65,6 +72,6 @@ export default function NewsletterSection() {
           </div>
         </div>
       </Container>
-    </section>
+    </motion.section>
   );
 }

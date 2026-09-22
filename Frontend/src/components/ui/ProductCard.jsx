@@ -57,15 +57,16 @@ export default function ProductCard({
       return (
         <motion.button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.94 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 20 }}
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart?.(1);
           }}
-          className="w-full h-8 rounded-lg bg-white border border-emerald-600 text-emerald-700 font-bold hover:bg-emerald-600 hover:text-white px-3 py-1 text-xs transition-all shadow-2xs flex items-center justify-between cursor-pointer"
+          className="w-full h-8 rounded-full bg-white border-2 border-emerald-600 text-emerald-700 font-bold hover:bg-emerald-600 hover:text-white px-3 py-1 text-xs transition-all shadow-2xs flex items-center justify-between cursor-pointer"
         >
-          <span>ADD</span>
+          <span className="font-extrabold tracking-wide">ADD</span>
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
         </motion.button>
       );
@@ -73,19 +74,21 @@ export default function ProductCard({
 
     return (
       <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
+        initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.85, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-        className="flex items-center justify-between w-full h-8 px-1.5 rounded-lg bg-emerald-600 text-white shadow-2xs"
+        className="flex items-center justify-between w-full h-8 px-1.5 rounded-full bg-emerald-600 text-white shadow-sm"
       >
         <motion.button
           type="button"
+          whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.8 }}
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart?.(-1);
           }}
-          className="flex h-6 w-6 items-center justify-center rounded text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-emerald-700 transition-colors cursor-pointer"
           aria-label="Decrease quantity"
         >
           <Minus className="h-3 w-3" strokeWidth={2.5} />
@@ -97,12 +100,13 @@ export default function ProductCard({
 
         <motion.button
           type="button"
+          whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.8 }}
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart?.(1);
           }}
-          className="flex h-6 w-6 items-center justify-center rounded text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-emerald-700 transition-colors cursor-pointer"
           aria-label="Increase quantity"
         >
           <Plus className="h-3 w-3" strokeWidth={2.5} />
@@ -113,20 +117,21 @@ export default function ProductCard({
 
   return (
     <motion.article
-      whileHover={variant === 'compact' ? {} : { y: -2 }}
+      whileHover={variant === 'compact' ? {} : { y: -4 }}
       whileTap={onClick ? { scale: 0.985 } : {}}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       onClick={onClick}
       className={classNames(
-        'group relative flex flex-col rounded-2xl bg-white border border-stone-200/80 shadow-sm hover:shadow-md transition-all p-3',
+        'group relative flex flex-col rounded-2xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.1)] transition-all duration-300 p-3',
         outOfStock ? 'opacity-60' : '',
         onClick && 'cursor-pointer',
         className
       )}
     >
-      {/* 1. Neutral Light-Gray Image Container */}
-      <div className="relative w-full aspect-square bg-stone-50/80 rounded-xl flex items-center justify-center overflow-hidden p-2">
+      {/* 1. Crisp Centered Image Container with Aspect-Square Padding */}
+      <div className="relative w-full aspect-square bg-slate-50/70 rounded-xl flex items-center justify-center overflow-hidden p-2.5">
         {!imgLoaded && (
-          <div className="absolute inset-0 bg-stone-100 animate-pulse" />
+          <div className="absolute inset-0 bg-slate-100 animate-pulse" />
         )}
         <img
           src={currentSrc}
@@ -145,10 +150,10 @@ export default function ProductCard({
           )}
         />
 
-        {/* Subtle Discount Badge */}
+        {/* Vibrant Pill Badge at Top-Left */}
         {discount > 0 && (
           <div className="absolute top-2 left-2 z-10">
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-tight bg-emerald-800 text-white shadow-2xs">
+            <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               {discount}% OFF
             </span>
           </div>
@@ -164,27 +169,27 @@ export default function ProductCard({
             }}
             whileTap={{ scale: 0.75 }}
             className={classNames(
-              'absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center backdrop-blur-sm border transition-all duration-200 shadow-2xs cursor-pointer',
+              'absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm border transition-all duration-200 shadow-2xs cursor-pointer',
               isInWishlist
                 ? 'bg-rose-50 text-rose-600 border-rose-200'
-                : 'bg-white/90 text-stone-400 hover:text-stone-700 border-stone-200/80 hover:bg-white'
+                : 'bg-white/90 text-slate-400 hover:text-slate-700 border-slate-200/80 hover:bg-white'
             )}
             aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart
               className={classNames(
                 'w-3.5 h-3.5',
-                isInWishlist ? 'fill-rose-600 text-rose-600' : 'text-stone-500'
+                isInWishlist ? 'fill-rose-600 text-rose-600' : 'text-slate-500'
               )}
-              strokeWidth={1.75}
+              strokeWidth={2}
             />
           </motion.button>
         )}
 
         {/* Out of Stock Overlay */}
         {outOfStock && (
-          <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-[2px] flex items-center justify-center z-20">
-            <span className="px-2.5 py-1 rounded-md bg-stone-900/90 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-20">
+            <span className="px-2.5 py-1 rounded-full bg-slate-900/90 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
               Out of Stock
             </span>
           </div>
@@ -196,11 +201,11 @@ export default function ProductCard({
         <div>
           {/* Pack Size / Weight in muted gray */}
           <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="text-xs text-stone-500 font-medium">
+            <span className="text-xs text-slate-500 font-medium">
               {unit}
             </span>
             {categoryName && (
-              <span className="text-[10px] font-medium text-stone-400 truncate max-w-[100px]">
+              <span className="text-[10px] font-medium text-slate-400 truncate max-w-[100px]">
                 {categoryName}
               </span>
             )}
@@ -209,7 +214,7 @@ export default function ProductCard({
           {/* Product Name in Crisp Dark Slate */}
           <h3
             className={classNames(
-              'text-stone-900 font-semibold text-sm line-clamp-2 leading-snug group-hover:text-emerald-800 transition-colors',
+              'text-slate-900 font-semibold text-sm line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors',
               variant === 'compact' ? 'text-xs' : 'text-sm'
             )}
             title={name}
@@ -220,22 +225,22 @@ export default function ProductCard({
           {/* Clean Rating Snippet */}
           <div className="flex items-center gap-1 mt-1">
             <div className="flex items-center text-amber-500">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={1.75} />
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" strokeWidth={2} />
             </div>
-            <span className="text-[10px] font-bold text-stone-500 tabular-nums">
+            <span className="text-[10px] font-bold text-slate-500 tabular-nums">
               {rating > 0 ? rating.toFixed(1) : '4.8'}
             </span>
           </div>
         </div>
 
-        {/* 3. Pricing + Blinkit-Style ADD Button */}
-        <div className="mt-2.5 pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
+        {/* 3. Pricing + Tier-1 Quick-Commerce ADD Button */}
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
           <div className="leading-tight">
-            <p className="text-sm sm:text-base font-bold text-stone-950 tabular-nums">
+            <p className="text-sm sm:text-base font-bold text-slate-900 tabular-nums">
               {formatPrice(effectiveSellingPrice)}
             </p>
             {effectiveOriginalPrice > effectiveSellingPrice && (
-              <p className="text-[10px] text-stone-400 line-through tabular-nums">
+              <p className="text-[10px] text-slate-400 line-through tabular-nums">
                 {formatPrice(effectiveOriginalPrice)}
               </p>
             )}

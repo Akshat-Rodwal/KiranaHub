@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Sparkles,
   Milk,
@@ -71,10 +72,16 @@ export default function CategorySection() {
   });
 
   return (
-    <section className="py-4 sm:py-6 bg-[#f7f9f7]">
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="py-4 sm:py-6 bg-[#f7f9f7]"
+    >
       <Container>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg sm:text-xl font-black text-stone-900 tracking-tight">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="font-display text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             Shop by Category
           </h2>
           <Link
@@ -85,8 +92,22 @@ export default function CategorySection() {
           </Link>
         </div>
 
-        {/* 20 Categories Grid (Exact 10-column x 2-row layout on desktop, responsive) */}
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-4 sm:gap-x-3 sm:gap-y-5">
+        {/* 1. Mobile Layout: Dual-Row Horizontal Scroll with Hidden Scrollbars */}
+        <div className="md:hidden grid grid-rows-2 grid-flow-col auto-cols-[82px] sm:auto-cols-[96px] gap-2.5 sm:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-2 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0">
+          {displayCategories.map((category) => (
+            <CategoryCard
+              key={category.slug}
+              name={category.name}
+              icon={category.icon}
+              image={category.image}
+              count={category.count}
+              to={category.to}
+            />
+          ))}
+        </div>
+
+        {/* 2. Desktop Layout: Clean 8-Column Grid */}
+        <div className="hidden md:grid md:grid-cols-8 gap-3 lg:gap-4">
           {displayCategories.map((category) => (
             <CategoryCard
               key={category.slug}
@@ -99,6 +120,6 @@ export default function CategorySection() {
           ))}
         </div>
       </Container>
-    </section>
+    </motion.section>
   );
 }

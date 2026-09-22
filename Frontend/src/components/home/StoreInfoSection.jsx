@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { MapPin, Phone, Clock, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 import Container from '../common/Container.jsx';
 import { storeInfo } from '../../data/mock.jsx';
@@ -28,7 +29,13 @@ const PROMO_PILLARS = [
 
 export default function StoreInfoSection() {
   return (
-    <section className="py-6 lg:py-8 bg-[#f7f9f7]">
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="py-6 lg:py-8 bg-[#f7f9f7]"
+    >
       <Container>
         <div className="grid gap-4 lg:grid-cols-3 lg:gap-5">
           {/* Store Info Card */}
@@ -101,12 +108,12 @@ export default function StoreInfoSection() {
                 </p>
               </div>
               <span className="mt-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xs lg:mt-0">
-                <ShieldCheck className="h-6 w-6" strokeWidth={1.75} />
+                <ShieldCheck className="h-6 w-6" strokeWidth={2} />
               </span>
             </div>
           </div>
         </div>
       </Container>
-    </section>
+    </motion.section>
   );
 }

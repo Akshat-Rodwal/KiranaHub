@@ -288,45 +288,56 @@ export default function Navbar() {
             )}
 
             {/* Mobile Compact Cart Icon Button (< sm) */}
-            <button
+            <motion.button
               type="button"
               onClick={openCartDrawer}
+              whileTap={{ scale: 0.92 }}
               className="relative p-2 rounded-xl bg-stone-100/80 hover:bg-stone-200/80 sm:hidden cursor-pointer transition-colors"
               aria-label="Open Cart"
             >
-              <ShoppingCart className="w-5 h-5 text-stone-800" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-xs">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </button>
+              <ShoppingCart className="w-5 h-5 text-stone-800" strokeWidth={2} />
+              <AnimatePresence>
+                {cartCount > 0 && (
+                  <motion.span
+                    key={cartCount}
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: [0.3, 1.35, 0.9, 1.1, 1], opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 600, damping: 18 }}
+                    className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center shadow-xs"
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
 
             {/* Desktop / Tablet Signature Blinkit "My Cart" Button (>= sm) */}
             <motion.button
               type="button"
               onClick={openCartDrawer}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.94 }}
               className={classNames(
-                'hidden sm:flex items-center gap-2.5 rounded-xl px-3.5 sm:px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer shadow-xs',
+                'hidden sm:flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition-all cursor-pointer shadow-xs',
                 cartCount > 0
-                  ? 'bg-[#0c831f] hover:bg-[#0a6d1a] text-white shadow-md shadow-[#0c831f]/20'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25 hover:shadow-lg'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
               )}
               aria-label="Open Cart"
             >
               <motion.div
                 key={cartCount}
-                initial={{ scale: 0.7 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: [0.8, 1.25, 0.95, 1.05, 1] }}
                 transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                 className="flex items-center gap-2"
               >
-                <ShoppingCart className="h-4.5 w-4.5 text-current" strokeWidth={1.75} />
+                <ShoppingCart className="h-4.5 w-4.5 text-current" strokeWidth={2} />
                 <div className="leading-tight text-left">
                   {cartCount > 0 ? (
                     <>
-                      <p className="text-[10px] text-emerald-100 uppercase tracking-wider leading-none">
+                      <p className="text-[10px] text-emerald-100 uppercase tracking-wider leading-none font-bold">
                         {cartCount} {cartCount === 1 ? 'item' : 'items'}
                       </p>
                       <p className="font-display font-black text-xs text-white leading-none mt-0.5">

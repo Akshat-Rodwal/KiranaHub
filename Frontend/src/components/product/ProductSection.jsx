@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight, Clock } from 'lucide-react';
 
 import Container from '../common/Container.jsx';
@@ -20,7 +21,13 @@ export default function ProductSection({
   onRetry,
 }) {
   return (
-    <section className={dense ? 'py-5 lg:py-7' : 'section'}>
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={dense ? 'py-5 lg:py-7' : 'section'}
+    >
       <Container>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4 sm:mb-6">
           <div className="min-w-0">
@@ -81,6 +88,6 @@ export default function ProductSection({
           </div>
         )}
       </Container>
-    </section>
+    </motion.section>
   );
 }
