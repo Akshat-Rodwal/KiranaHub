@@ -1,4 +1,3 @@
-import Hero from '../../components/home/Hero.jsx';
 import TopSingleBanner from '../../components/home/TopSingleBanner.jsx';
 import CategorySection from '../../components/home/CategorySection.jsx';
 import InstamartPromoCarousel from '../../components/home/InstamartPromoCarousel.jsx';
@@ -14,19 +13,16 @@ export default function HomePage() {
 
   return (
     <div className="bg-[#f7f9f7] min-h-screen">
-      {/* 1. Top Delivery & Promo Ticker (Compact Glassmorphic Bar) */}
-      <Hero />
-
-      {/* 2. Single Graphical Hero Banner */}
+      {/* 1. Single Graphical Hero Banner at Top of Page */}
       <TopSingleBanner />
 
-      {/* 3. Shop by Category Directly Below Top Banner */}
+      {/* 2. Shop by Category Directly Below Top Banner */}
       <CategorySection />
 
-      {/* 4. Swiggy Instamart 3-Card Promo Carousel */}
+      {/* 3. Swiggy Instamart 3-Card Promo Carousel */}
       <InstamartPromoCarousel />
 
-      {/* 5. Shelf A: Trending / Flash Deals */}
+      {/* 4. Shelf A: Trending / Flash Deals */}
       <ProductSection
         badge="⚡ Super Saver Deals"
         title="Trending / Flash Deals"
@@ -40,7 +36,7 @@ export default function HomePage() {
         dense
       />
 
-      {/* 6. Shelf B: Daily Staples & Essentials */}
+      {/* 5. Shelf B: Daily Staples & Essentials */}
       <ProductSection
         badge="🌾 Kitchen Staples"
         title="Daily Staples & Essentials"
@@ -54,7 +50,7 @@ export default function HomePage() {
         dense
       />
 
-      {/* 7. Remaining Sections: Trust Badges & Newsletter */}
+      {/* 6. Remaining Sections: Trust Badges & Newsletter */}
       <StoreInfoSection />
       <NewsletterSection />
     </div>
