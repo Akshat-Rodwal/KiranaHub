@@ -18,7 +18,7 @@ export default function CategorySection() {
     <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 sm:gap-4">
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i} className="flex flex-col items-center justify-start shrink-0 animate-pulse">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl sm:rounded-full bg-slate-200/80 border border-slate-200/60 p-3.5 mb-2" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-100/50 border border-emerald-200/40 p-3.5 mb-2" />
           <div className="h-3 w-16 bg-slate-200 rounded-md" />
         </div>
       ))}

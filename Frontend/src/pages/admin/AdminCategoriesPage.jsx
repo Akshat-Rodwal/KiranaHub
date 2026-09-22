@@ -8,6 +8,7 @@ import Button from '../../components/common/Button.jsx';
 import Modal, { useModal } from '../../components/common/Modal.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
 import { toast } from '../../components/common/Toast.jsx';
+import { resolveCategory3DIcon } from '../../utils/categoryIcons.js';
 import {
   IconPlus,
   IconRefresh,
@@ -235,20 +236,21 @@ export default function AdminCategoriesPage() {
                   <tr key={cat._id || cat.slug} className="hover:bg-surface-soft/40 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        {cat.image ? (
+                        <div className="w-10 h-10 rounded-full bg-[#ebfaf2] border border-[#bbf0d2] flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
                           <img
-                            src={cat.image}
+                            src={resolveCategory3DIcon(
+                              cat.name,
+                              cat.slug,
+                              cat.icon || (cat.image?.startsWith('http') ? cat.image : null)
+                            )}
                             alt={cat.name}
-                            className="h-9 w-9 rounded-xl object-contain border border-border bg-surface-soft shrink-0 p-1"
+                            className="h-7 w-7 object-contain"
                             onError={(e) => {
-                              e.target.style.display = 'none';
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
                             }}
                           />
-                        ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                            <IconGrid className="h-4 w-4" />
-                          </div>
-                        )}
+                        </div>
                         <span className="font-semibold text-xs text-text-primary">{cat.name}</span>
                       </div>
                     </td>
@@ -347,6 +349,29 @@ export default function AdminCategoriesPage() {
               placeholder="https://cdn-icons-png.flaticon.com/..."
               className="w-full rounded-xl border border-border px-3 py-2 text-xs text-text-primary focus:border-brand-500 focus:outline-none"
             />
+          </div>
+
+          {/* Smart 3D Icon Auto-Detection Live Preview */}
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebfaf2] border border-[#bbf0d2]">
+            <div className="w-12 h-12 rounded-full bg-white border border-[#bbf0d2] flex items-center justify-center shadow-xs shrink-0 p-1">
+              <img
+                src={resolveCategory3DIcon(formData.name, formData.slug, formData.image)}
+                alt="Preview"
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
+                }}
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-emerald-950">Smart 3D Icon Auto-Detection</p>
+              <p className="text-[11px] text-emerald-700">
+                {formData.image?.trim()
+                  ? 'Using custom image provided above'
+                  : 'Auto-detected based on category name/slug keywords. Leave blank to keep 3D icon.'}
+              </p>
+            </div>
           </div>
 
           <div>

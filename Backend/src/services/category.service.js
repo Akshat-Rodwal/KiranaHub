@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from '../constants/httpStatus.js';
 import categorySeedData from '../seeders/data/categories.js';
+import { resolveCategory3DIcon } from '../utils/categoryIcons.js';
 
 const toCategoryDTO = (category, productCount) => ({
   _id: category._id ? String(category._id) : undefined,
@@ -12,7 +13,9 @@ const toCategoryDTO = (category, productCount) => ({
   name: category.name,
   description: category.description || '',
   image: category.image || '',
-  icon: category.icon || '',
+  icon: category.icon?.trim()
+    ? category.icon.trim()
+    : resolveCategory3DIcon(category.name, category.slug, category.image),
   isActive: category.isActive !== false,
   sortOrder: category.sortOrder || 0,
   itemCount: productCount ?? category.productCount ?? 0,
@@ -22,12 +25,24 @@ const toCategoryDTO = (category, productCount) => ({
 });
 
 /**
- * Ensures categories exist in MongoDB. If collection is empty, auto-seeds default categories.
+ * Ensures categories exist in MongoDB. If collection is empty, auto-seeds default 13+ categories.
+ * If fewer than default categories exist, seeds the missing ones.
  */
 export const ensureDefaultCategories = async () => {
   const count = await Category.countDocuments();
   if (count === 0) {
     await Category.insertMany(categorySeedData);
+    return;
+  }
+
+  // Seed missing categories if fewer than seed data
+  if (count < categorySeedData.length) {
+    for (const cat of categorySeedData) {
+      const exists = await Category.findOne({ slug: cat.slug });
+      if (!exists) {
+        await Category.create(cat);
+      }
+    }
   }
 };
 
@@ -98,18 +113,32 @@ const resolveCategoryId = async (slug) => {
 };
 
 const createCategory = async (data) => {
-  const category = await Category.create(data);
+  const icon = data.icon?.trim()
+    ? data.icon.trim()
+    : resolveCategory3DIcon(data.name, data.slug, data.image);
+
+  const payload = {
+    ...data,
+    icon,
+  };
+
+  const category = await Category.create(payload);
   return toCategoryDTO(category, 0);
 };
 
 const updateCategory = async (idOrSlug, data) => {
+  const updateData = { ...data };
+  if (!updateData.icon || !updateData.icon.trim()) {
+    updateData.icon = resolveCategory3DIcon(updateData.name || '', updateData.slug || '', updateData.image);
+  }
+
   const query = mongoose.isValidObjectId(idOrSlug)
     ? { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] }
     : { slug: idOrSlug };
 
   const category = await Category.findOneAndUpdate(
     query,
-    { $set: data },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 

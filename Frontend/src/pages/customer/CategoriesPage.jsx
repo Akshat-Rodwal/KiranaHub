@@ -30,7 +30,7 @@ export default function CategoriesPage() {
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-x-2 gap-y-4 sm:gap-x-3 sm:gap-y-5">
             {Array.from({ length: 10 }, (_, index) => (
               <div key={index} className="flex flex-col items-center gap-2 animate-pulse" aria-hidden="true">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl sm:rounded-full bg-slate-200" />
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-100/50 border border-emerald-200/40" />
                 <div className="h-3 w-14 rounded-md bg-slate-200" />
               </div>
             ))}

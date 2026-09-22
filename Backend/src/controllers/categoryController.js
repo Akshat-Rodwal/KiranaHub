@@ -8,29 +8,31 @@ const getCategories = asyncHandler(async (req, res) => {
   const includeInactive = query.includeInactive === true || query.includeInactive === 'true' || query.all === 'true';
   const categories = await categoryService.list({ includeInactive });
 
-  return res
-    .status(httpStatus.OK)
-    .json(
-      new ApiResponse(
-        httpStatus.OK,
-        'Categories retrieved successfully',
-        { items: categories, categories },
-      ),
-    );
+  return res.status(httpStatus.OK).json({
+    success: true,
+    count: categories.length,
+    data: {
+      categories,
+      items: categories,
+    },
+    categories,
+    items: categories,
+  });
 });
 
 const getAdminCategories = asyncHandler(async (_req, res) => {
   const categories = await categoryService.list({ includeInactive: true });
 
-  return res
-    .status(httpStatus.OK)
-    .json(
-      new ApiResponse(
-        httpStatus.OK,
-        'Admin categories retrieved successfully',
-        { items: categories, categories },
-      ),
-    );
+  return res.status(httpStatus.OK).json({
+    success: true,
+    count: categories.length,
+    data: {
+      categories,
+      items: categories,
+    },
+    categories,
+    items: categories,
+  });
 });
 
 const getCategoryBySlug = asyncHandler(async (req, res) => {
