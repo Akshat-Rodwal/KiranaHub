@@ -47,7 +47,7 @@ const resolveBannerImageUrl = (url, fallback = fallbackImg) => {
   return trimmed || fallback;
 };
 
-const FALLBACK_SLIDES = [
+const DEFAULT_SLIDES = [
   {
     id: 'instant-delivery',
     badge: '⚡ Instant Hyperlocal Delivery',
@@ -139,8 +139,8 @@ export default function Hero() {
 
   const promoCode = settings?.promoCode || 'FIRST50';
 
-  // Merge dynamic banners from DB with fallbacks
-  const carouselSlides = useMemo(() => {
+  // Memoize active hero carousel slides safely
+  const activeSlides = useMemo(() => {
     const list = Array.isArray(apiBanners)
       ? apiBanners
       : apiBanners?.banners || apiBanners?.all || [];
@@ -154,18 +154,18 @@ export default function Hero() {
         id: b._id || b.id || `carousel-${index}`,
         badge: b.badge || (index === 0 ? '⚡ Instant Hyperlocal Delivery' : '⚡ Featured Deal'),
         badgeIcon: index % 2 === 0 ? Zap : Tag,
-        title: b.title,
-        subtitle: b.subtitle,
-        ctaText: b.ctaText || 'Shop Now',
+        title: b.title || 'Groceries delivered in 10 minutes',
+        subtitle: b.subtitle || 'Fresh vegetables, dairy & daily pantry essentials.',
+        ctaText: b.ctaText || 'Order Now',
         ctaLink: b.link || ROUTES.PRODUCTS,
-        image: resolveBannerImageUrl(b.imageUrl, fallbackImg),
+        image: resolveBannerImageUrl(b.imageUrl || b.image),
         isCouponSlide:
           b.title?.toLowerCase().includes('coupon') ||
           b.title?.toLowerCase().includes('first50') ||
           b.subtitle?.toLowerCase().includes('first50'),
       }));
     }
-    return FALLBACK_SLIDES;
+    return DEFAULT_SLIDES;
   }, [apiBanners]);
 
   // Sub-hero promotional tiles (3 columns) with light pastel themes & dynamic database sync
@@ -227,7 +227,7 @@ export default function Hero() {
     ];
   }, [apiBanners]);
 
-  const slideCount = carouselSlides.length;
+  const slideCount = activeSlides.length;
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slideCount);
@@ -237,14 +237,14 @@ export default function Hero() {
     setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount);
   }, [slideCount]);
 
-  // Auto-sliding interval (paused on user hover)
+  // Clean auto-sliding interval without aggressive resets
   useEffect(() => {
     if (isPaused || slideCount <= 1) return;
     const timer = setInterval(() => {
-      nextSlide();
-    }, 4000);
+      setCurrentSlide((prev) => (prev + 1) % slideCount);
+    }, 4500);
     return () => clearInterval(timer);
-  }, [isPaused, nextSlide, slideCount]);
+  }, [isPaused, slideCount]);
 
   const handleCopyPromo = (e) => {
     e.preventDefault();
@@ -256,73 +256,72 @@ export default function Hero() {
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const activeSlideIndex = currentSlide < slideCount ? currentSlide : 0;
-  const slide = carouselSlides[activeSlideIndex] || carouselSlides[0];
-  const BadgeIcon = slide.badgeIcon || Zap;
+  const activeSlideIndex = slideCount > 0 ? currentSlide % slideCount : 0;
+  const currentSlideData = activeSlides[activeSlideIndex] || activeSlides[0];
+  const BadgeIcon = currentSlideData.badgeIcon || Zap;
 
   return (
     <section className="bg-[#f7f9f7] pt-2 pb-2 sm:pt-4 sm:pb-4">
       <Container className="px-3 sm:px-6">
         {/* 1. Full-Bleed Background Image Hero Carousel with Sleek Quick-Commerce Proportions */}
         <div
-          className="relative w-full h-[170px] sm:h-[210px] md:h-[240px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-emerald-900/30"
+          className="relative w-full h-[180px] sm:h-[220px] md:h-[260px] rounded-2xl overflow-hidden shadow-sm bg-slate-900"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slide.id}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-              className="absolute inset-0 w-full h-full flex items-center"
-            >
-              {/* Full-Bleed Background Image with Resilient Fallback */}
-              <img
-                src={slide.image || fallbackImg}
-                alt={slide.title}
-                className="absolute inset-0 w-full h-full object-cover -z-10"
-                loading="eager"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = fallbackImg;
-                }}
-              />
+          {/* Solid Static Background Image with Smooth CSS Fade - Never Unmounted */}
+          <img
+            key={currentSlideData.image}
+            src={currentSlideData.image}
+            alt={currentSlideData.title}
+            className="absolute inset-0 w-full h-full object-cover -z-10 transition-opacity duration-500"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = fallbackImg;
+            }}
+          />
 
-              {/* High-Contrast Readability Gradient Overlay on Left */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent pointer-events-none" />
+          {/* High-Contrast Readability Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent -z-10 pointer-events-none" />
 
-              {/* Text & CTA Content Layer */}
-              <div className="relative z-10 p-3.5 sm:p-6 md:p-8 max-w-xl text-left">
-                {slide.badge && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white backdrop-blur-md px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-black shadow-xs mb-1 sm:mb-2.5 border border-emerald-400/30">
+          {/* Text & CTA Content Layer (Graceful Text Animation Without Touching the Image) */}
+          <div className="relative z-10 p-3.5 sm:p-6 md:p-8 max-w-xl text-left h-full flex flex-col justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlideData.id}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                transition={{ duration: 0.3 }}
+              >
+                {currentSlideData.badge && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white backdrop-blur-md px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-black shadow-xs mb-1.5 sm:mb-2.5 border border-emerald-400/30">
                     <BadgeIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={2.4} />
-                    <span>{slide.badge}</span>
+                    <span>{currentSlideData.badge}</span>
                   </div>
                 )}
 
                 <h1 className="font-display text-base sm:text-2xl md:text-3xl font-black tracking-tight leading-[1.15] text-white drop-shadow-md line-clamp-1 sm:line-clamp-2">
-                  {slide.title}
+                  {currentSlideData.title}
                 </h1>
 
-                {slide.subtitle && (
+                {currentSlideData.subtitle && (
                   <p className="mt-1 sm:mt-2 text-[11px] sm:text-xs md:text-sm text-stone-100 font-medium leading-tight sm:leading-snug drop-shadow-sm max-w-lg line-clamp-1 sm:line-clamp-2">
-                    {slide.subtitle}
+                    {currentSlideData.subtitle}
                   </p>
                 )}
 
                 {/* Call-to-Action Group */}
                 <div className="mt-2.5 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                   <Link
-                    to={slide.ctaLink}
+                    to={currentSlideData.ctaLink}
                     className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0c831f] hover:bg-[#0a6d1a] px-4 py-1.5 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
-                    <span>{slide.ctaText}</span>
+                    <span>{currentSlideData.ctaText}</span>
                     <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
                   </Link>
 
-                  {slide.isCouponSlide && (
+                  {currentSlideData.isCouponSlide && (
                     <button
                       type="button"
                       onClick={handleCopyPromo}
@@ -349,9 +348,9 @@ export default function Hero() {
                     </button>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
           {/* Left / Right Floating Navigation Arrows */}
           {slideCount > 1 && (
@@ -375,7 +374,7 @@ export default function Hero() {
 
               {/* Bottom Pagination Indicators (Pill Dashes) */}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-                {carouselSlides.map((s, index) => {
+                {activeSlides.map((s, index) => {
                   const isActive = index === activeSlideIndex;
                   return (
                     <button
