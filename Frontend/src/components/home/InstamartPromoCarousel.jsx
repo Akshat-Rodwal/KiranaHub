@@ -155,47 +155,45 @@ export default function InstamartPromoCarousel() {
                 destinationLink.startsWith('http://') || destinationLink.startsWith('https://');
 
               const cardElement = (
-                <div className="relative rounded-3xl overflow-hidden h-[210px] sm:h-[225px] p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer border border-black/5 bg-slate-900">
-                  {/* 1. Full Background Image (Stretched across entire card) */}
+                <div className="relative rounded-3xl overflow-hidden h-[210px] sm:h-[225px] p-6 flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-300 group cursor-pointer border border-black/5 bg-slate-900 select-none">
+                  {/* 1. Background Image (Lowest Layer: z-0) */}
                   <img
-                    src={resolveImageUrl(card.imageUrl || card.image)}
+                    src={resolveImageUrl(card.imageUrl || card.image || card.bgImageUrl)}
                     alt={card.title}
-                    className="absolute inset-0 w-full h-full object-cover -z-20 transition-transform duration-700 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = FALLBACK_IMG;
+                      e.currentTarget.src = card.fallbackImage || FALLBACK_IMG;
                     }}
                     loading="lazy"
                   />
 
-                  {/* 2. High-Contrast Dark Gradient Overlay for 100% Readability */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent -z-10" />
+                  {/* 2. Gradient Readability Overlay (Middle Layer: z-10) */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent z-10 pointer-events-none" />
 
-                  {/* 3. Top-Right Badge: Brand / Sponsor Tag */}
+                  {/* 3. Top-Right Brand Badge (Top Layer: z-20) */}
                   {card.brandTag && (
-                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-xl shadow-xs border border-slate-100 flex flex-col items-center justify-center text-[10px] font-bold text-slate-800 z-10 select-none">
-                      <span>{card.brandTag}</span>
+                    <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-900 uppercase tracking-wide select-none">
+                      {card.brandTag}
                     </div>
                   )}
 
-                  {/* 4. Left Section: Title & Subtitle in Crisp White */}
-                  <div className="max-w-[70%] z-10">
-                    <h3 className="text-white font-black text-xl sm:text-2xl leading-tight drop-shadow-sm line-clamp-2">
-                      {card.title}
-                    </h3>
-                    {card.subtitle && (
-                      <p className="text-slate-200 text-xs sm:text-sm font-medium drop-shadow-xs line-clamp-2 mt-1.5 leading-snug">
+                  {/* 4. Foreground Content (Top Layer: z-20) */}
+                  <div className="relative z-20 flex flex-col justify-between h-full pointer-events-auto">
+                    <div className="max-w-[70%]">
+                      <h3 className="text-white font-black text-xl sm:text-2xl leading-tight drop-shadow-md line-clamp-2">
+                        {card.title}
+                      </h3>
+                      <p className="text-slate-200 text-xs sm:text-sm font-medium drop-shadow-sm line-clamp-2 mt-2 leading-snug">
                         {card.subtitle}
                       </p>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* 5. Bottom CTA: Clean White Pill Button */}
-                  <div className="pt-3 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-white text-slate-900 font-bold px-5 py-2 rounded-full text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95">
-                      <span>{card.ctaText || 'SHOP NOW'}</span>
-                      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    </span>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 bg-white text-slate-950 font-black px-5 py-2 rounded-full text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95">
+                        {card.ctaText || 'SHOP NOW'} →
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

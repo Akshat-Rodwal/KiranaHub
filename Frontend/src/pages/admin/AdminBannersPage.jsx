@@ -778,27 +778,27 @@ export default function AdminBannersPage() {
                   className="rounded-3xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                 >
                   {/* Visual Card Simulation */}
-                  <div className="p-5 h-[190px] relative flex flex-col justify-between overflow-hidden rounded-t-3xl bg-slate-900">
+                  <div className="p-5 h-[190px] relative flex flex-col justify-between overflow-hidden rounded-t-3xl bg-slate-900 select-none">
                     {/* Full Background Image */}
                     <img
                       src={resolveImageUrl(card.imageUrl || card.image)}
                       alt={card.title}
-                      className="absolute inset-0 w-full h-full object-cover -z-20"
+                      className="absolute inset-0 w-full h-full object-cover z-0"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src =
                           'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent -z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent z-10 pointer-events-none" />
 
                     {card.brandTag && (
-                      <div className="absolute top-3 right-3 z-10 bg-white/95 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs text-slate-800 border border-slate-100">
+                      <div className="absolute top-3 right-3 z-20 bg-white/95 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs text-slate-800 border border-slate-100">
                         {card.brandTag}
                       </div>
                     )}
 
-                    <div className="max-w-[70%] z-10">
+                    <div className="max-w-[70%] z-20">
                       <h3 className="font-black text-base tracking-tight leading-tight line-clamp-2 text-white drop-shadow-sm">
                         {card.title}
                       </h3>
@@ -807,7 +807,7 @@ export default function AdminBannersPage() {
                       </p>
                     </div>
 
-                    <div className="pt-2 z-10">
+                    <div className="pt-2 z-20">
                       <span className="inline-block px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white text-slate-900 shadow-sm">
                         {card.ctaText || 'SHOP NOW'}
                       </span>
@@ -901,27 +901,27 @@ export default function AdminBannersPage() {
                   <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                     Real-Time Storefront Preview
                   </span>
-                  <div className="rounded-3xl overflow-hidden relative p-6 h-[210px] flex flex-col justify-between shadow-sm border border-black/5 bg-slate-900 transition-all">
+                  <div className="rounded-3xl overflow-hidden relative p-6 h-[210px] flex flex-col justify-between shadow-sm border border-black/5 bg-slate-900 select-none transition-all">
                     {/* Full Background Image */}
                     <img
                       src={resolveImageUrl(cardFormData.imageUrl || cardFormData.image)}
                       alt={cardFormData.title}
-                      className="absolute inset-0 w-full h-full object-cover -z-20"
+                      className="absolute inset-0 w-full h-full object-cover z-0"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src =
                           'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent -z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/50 to-transparent z-10 pointer-events-none" />
 
                     {cardFormData.brandTag && (
-                      <div className="absolute top-4 right-4 z-10 bg-white/95 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-xs text-slate-800 border border-slate-100">
+                      <div className="absolute top-4 right-4 z-20 bg-white/95 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-xs text-slate-800 border border-slate-100">
                         {cardFormData.brandTag}
                       </div>
                     )}
 
-                    <div className="max-w-[70%] z-10">
+                    <div className="max-w-[70%] z-20">
                       <h3 className="text-2xl font-black tracking-tight leading-tight line-clamp-2 text-white drop-shadow-sm">
                         {cardFormData.title || 'Headline Here'}
                       </h3>
@@ -930,7 +930,7 @@ export default function AdminBannersPage() {
                       </p>
                     </div>
 
-                    <div className="pt-2 z-10">
+                    <div className="pt-2 z-20">
                       <span className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow bg-white text-slate-900">
                         <span>{cardFormData.ctaText || 'SHOP NOW'}</span>
                         <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
