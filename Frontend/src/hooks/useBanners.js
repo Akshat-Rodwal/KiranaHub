@@ -4,11 +4,9 @@ import bannerService from '../services/banner.service.js';
 export const useBanners = (options = {}) =>
   useQuery({
     queryKey: ['banners'],
-    queryFn: async () => {
-      const res = await bannerService.getBanners();
-      return res?.data || null;
-    },
-    staleTime: 60 * 1000,
+    queryFn: () => bannerService.getBanners({ active: true }),
+    staleTime: 0,
+    refetchOnMount: true,
     ...options,
   });
 

@@ -48,15 +48,19 @@ export const getBanners = asyncHandler(async (req, res) => {
   const subBanner2 = banners.find((b) => b.position === 'sub_banner_2') || null;
   const subBanner3 = banners.find((b) => b.position === 'sub_banner_3') || null;
 
-  return res.status(httpStatus.OK).json(
-    new ApiResponse(httpStatus.OK, 'Banners retrieved successfully', {
+  return res.status(httpStatus.OK).json({
+    success: true,
+    message: 'Banners retrieved successfully',
+    data: {
+      banners,
       hero_carousel: heroCarousel,
       sub_banner_1: subBanner1,
       sub_banner_2: subBanner2,
       sub_banner_3: subBanner3,
       all: banners,
-    })
-  );
+    },
+    banners,
+  });
 });
 
 /**

@@ -3,11 +3,19 @@ import apiClient from './apiClient.js';
 export const bannerService = {
   /**
    * Fetch active banners for storefront
-   * @returns {Promise<Object>}
+   * @param {Object} params
+   * @returns {Promise<Array>}
    */
-  async getBanners() {
-    const response = await apiClient.get('/banners?active=true');
-    return response.data;
+  getBanners: async (params = {}) => {
+    const res = await apiClient.get('/banners', { params });
+    const banners =
+      res?.data?.data?.banners ||
+      res?.data?.banners ||
+      res?.data?.data?.all ||
+      res?.data?.data ||
+      res?.data ||
+      [];
+    return Array.isArray(banners) ? banners : [];
   },
 };
 

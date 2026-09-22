@@ -97,8 +97,13 @@ export const adminService = {
    * @returns {Promise<Object>}
    */
   async getAdminBanners() {
-    const response = await apiClient.get('/admin/banners');
-    return response.data;
+    try {
+      const response = await apiClient.get('/banners/admin');
+      return response.data?.data || response.data || [];
+    } catch {
+      const fallback = await apiClient.get('/admin/banners');
+      return fallback.data?.data || fallback.data || [];
+    }
   },
 
   /**
@@ -107,7 +112,7 @@ export const adminService = {
    * @returns {Promise<Object>}
    */
   async createBanner(payload) {
-    const response = await apiClient.post('/admin/banners', payload);
+    const response = await apiClient.post('/banners', payload);
     return response.data;
   },
 
@@ -118,7 +123,7 @@ export const adminService = {
    * @returns {Promise<Object>}
    */
   async updateBanner(id, payload) {
-    const response = await apiClient.put(`/admin/banners/${id}`, payload);
+    const response = await apiClient.put(`/banners/${id}`, payload);
     return response.data;
   },
 
@@ -128,7 +133,7 @@ export const adminService = {
    * @returns {Promise<Object>}
    */
   async deleteBanner(id) {
-    const response = await apiClient.delete(`/admin/banners/${id}`);
+    const response = await apiClient.delete(`/banners/${id}`);
     return response.data;
   },
 

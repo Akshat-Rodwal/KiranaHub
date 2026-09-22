@@ -22,6 +22,7 @@ router.post('/upload', verifyJWT, authorizeRoles('admin', 'manager'), uploadBann
 // Admin / Manager protected banner management
 router.get('/admin', verifyJWT, authorizeRoles('admin', 'manager'), getAdminBanners);
 router.post('/admin', verifyJWT, authorizeRoles('admin', 'manager'), createBanner);
+router.post('/', verifyJWT, authorizeRoles('admin', 'manager'), createBanner);
 router.put('/admin/:id', verifyJWT, authorizeRoles('admin', 'manager'), updateBanner);
 router.put('/:id', verifyJWT, authorizeRoles('admin', 'manager'), updateBanner);
 router.delete('/admin/:id', verifyJWT, authorizeRoles('admin', 'manager'), deleteBanner);

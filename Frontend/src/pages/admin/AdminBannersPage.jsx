@@ -97,7 +97,8 @@ export default function AdminBannersPage() {
   } = useQuery({
     queryKey: ['admin-banners'],
     queryFn: () => adminService.getAdminBanners(),
-    staleTime: 10 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Safely extract banners array regardless of response unwrap format

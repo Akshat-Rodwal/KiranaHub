@@ -12,14 +12,17 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
+import { useQuery } from '@tanstack/react-query';
 import Container from '../common/Container.jsx';
 import { toast } from '../common/Toast.jsx';
 import { ROUTES, API_BASE_URL } from '../../constants/index.js';
 import useStoreSettings from '../../hooks/useStoreSettings.js';
-import useBanners from '../../hooks/useBanners.js';
+import bannerService from '../../services/banner.service.js';
 import heroGroceriesImg from '../../assets/hero-groceries.png';
 
-// High-resolution Tier-1 CDN fallback banner images
+// High-resolution Tier-1 CDN fallback banner image
+const fallbackImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80';
+
 const CDN_FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
   'https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=1400&q=80',
@@ -27,7 +30,7 @@ const CDN_FALLBACK_IMAGES = [
 ];
 
 // Helper to resolve uploaded or absolute banner image URLs cleanly without CORS/broken links
-const resolveBannerImageUrl = (url, fallback) => {
+const resolveBannerImageUrl = (url, fallback = fallbackImg) => {
   if (!url) return fallback;
   const trimmed = String(url).trim();
   if (
@@ -39,11 +42,9 @@ const resolveBannerImageUrl = (url, fallback) => {
     return trimmed;
   }
   if (trimmed.startsWith('/uploads')) {
-    const rawApi = import.meta.env.VITE_API_BASE_URL || API_BASE_URL || 'https://kiranahub-backend.onrender.com';
-    const backendRoot = rawApi.replace(/\/api\/v1\/?$/, '');
-    return `${backendRoot}${trimmed}`;
+    return `https://kiranahub-backend.onrender.com${trimmed}`;
   }
-  return trimmed;
+  return trimmed || fallback;
 };
 
 const FALLBACK_SLIDES = [
@@ -125,7 +126,12 @@ const DEFAULT_SUB_TILES = [
 export default function Hero() {
   const reduceMotion = useReducedMotion();
   const { data: settings } = useStoreSettings();
-  const { data: bannersData } = useBanners();
+  const { data: apiBanners = [], isLoading } = useQuery({
+    queryKey: ['banners'],
+    queryFn: () => bannerService.getBanners({ active: true }),
+    staleTime: 0, // Ensure instant live refetch
+    refetchOnMount: true,
+  });
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -135,20 +141,16 @@ export default function Hero() {
 
   // Merge dynamic banners from DB with fallbacks
   const carouselSlides = useMemo(() => {
-    const rawList =
-      bannersData?.hero_carousel ||
-      (Array.isArray(bannersData)
-        ? bannersData.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
-        : null) ||
-      (Array.isArray(bannersData?.items)
-        ? bannersData.items.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
-        : null) ||
-      (Array.isArray(bannersData?.all)
-        ? bannersData.all.filter((b) => b.position === 'hero_carousel' && b.isActive !== false)
-        : null);
+    const list = Array.isArray(apiBanners)
+      ? apiBanners
+      : apiBanners?.banners || apiBanners?.all || [];
 
-    if (rawList && rawList.length > 0) {
-      return rawList.map((b, index) => ({
+    const activeHeroBanners = list.filter(
+      (b) => b.position === 'hero_carousel' && b.isActive !== false
+    );
+
+    if (activeHeroBanners.length > 0) {
+      return activeHeroBanners.map((b, index) => ({
         id: b._id || b.id || `carousel-${index}`,
         badge: b.badge || (index === 0 ? '⚡ Instant Hyperlocal Delivery' : '⚡ Featured Deal'),
         badgeIcon: index % 2 === 0 ? Zap : Tag,
@@ -156,7 +158,7 @@ export default function Hero() {
         subtitle: b.subtitle,
         ctaText: b.ctaText || 'Shop Now',
         ctaLink: b.link || ROUTES.PRODUCTS,
-        image: resolveBannerImageUrl(b.imageUrl, CDN_FALLBACK_IMAGES[index % CDN_FALLBACK_IMAGES.length]),
+        image: resolveBannerImageUrl(b.imageUrl, fallbackImg),
         isCouponSlide:
           b.title?.toLowerCase().includes('coupon') ||
           b.title?.toLowerCase().includes('first50') ||
@@ -164,19 +166,17 @@ export default function Hero() {
       }));
     }
     return FALLBACK_SLIDES;
-  }, [bannersData]);
+  }, [apiBanners]);
 
   // Sub-hero promotional tiles (3 columns) with light pastel themes & dynamic database sync
   const subHeroTiles = useMemo(() => {
-    const b1 =
-      bannersData?.sub_banner_1 ||
-      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_1') : null);
-    const b2 =
-      bannersData?.sub_banner_2 ||
-      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_2') : null);
-    const b3 =
-      bannersData?.sub_banner_3 ||
-      (Array.isArray(bannersData?.all) ? bannersData.all.find((b) => b.position === 'sub_banner_3') : null);
+    const list = Array.isArray(apiBanners)
+      ? apiBanners
+      : apiBanners?.banners || apiBanners?.all || [];
+
+    const b1 = list.find((b) => b.position === 'sub_banner_1');
+    const b2 = list.find((b) => b.position === 'sub_banner_2');
+    const b3 = list.find((b) => b.position === 'sub_banner_3');
 
     return [
       b1
@@ -225,7 +225,7 @@ export default function Hero() {
           }
         : DEFAULT_SUB_TILES[2],
     ];
-  }, [bannersData]);
+  }, [apiBanners]);
 
   const slideCount = carouselSlides.length;
 
@@ -265,7 +265,7 @@ export default function Hero() {
       <Container className="px-3 sm:px-6">
         {/* 1. Full-Bleed Background Image Hero Carousel with Sleek Quick-Commerce Proportions */}
         <div
-          className="relative w-full h-[170px] sm:h-[210px] md:h-[240px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-slate-900"
+          className="relative w-full h-[170px] sm:h-[210px] md:h-[240px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-emerald-900/30"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
@@ -280,20 +280,18 @@ export default function Hero() {
             >
               {/* Full-Bleed Background Image with Resilient Fallback */}
               <img
-                src={slide.image}
+                src={slide.image || fallbackImg}
                 alt={slide.title}
-                className="absolute inset-0 w-full h-full object-cover object-center -z-10"
+                className="absolute inset-0 w-full h-full object-cover -z-10"
                 loading="eager"
                 onError={(e) => {
-                  const fallbackUrl = CDN_FALLBACK_IMAGES[activeSlideIndex % CDN_FALLBACK_IMAGES.length];
-                  if (e.currentTarget.src !== fallbackUrl) {
-                    e.currentTarget.src = fallbackUrl;
-                  }
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = fallbackImg;
                 }}
               />
 
-              {/* Elegant Transparent Dark-Slate Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/30 to-transparent pointer-events-none" />
+              {/* High-Contrast Readability Gradient Overlay on Left */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent pointer-events-none" />
 
               {/* Text & CTA Content Layer */}
               <div className="relative z-10 p-3.5 sm:p-6 md:p-8 max-w-xl text-left">
