@@ -19,6 +19,13 @@ import useStoreSettings from '../../hooks/useStoreSettings.js';
 import useBanners from '../../hooks/useBanners.js';
 import heroGroceriesImg from '../../assets/hero-groceries.png';
 
+// High-resolution Tier-1 CDN fallback banner images
+const CDN_FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1506617420156-8e4536971650?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1400&q=80',
+];
+
 // Helper to resolve uploaded or absolute banner image URLs cleanly without CORS/broken links
 const resolveBannerImageUrl = (url, fallback) => {
   if (!url) return fallback;
@@ -32,7 +39,8 @@ const resolveBannerImageUrl = (url, fallback) => {
     return trimmed;
   }
   if (trimmed.startsWith('/uploads')) {
-    const backendRoot = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+    const rawApi = import.meta.env.VITE_API_BASE_URL || API_BASE_URL || 'https://kiranahub-backend.onrender.com';
+    const backendRoot = rawApi.replace(/\/api\/v1\/?$/, '');
     return `${backendRoot}${trimmed}`;
   }
   return trimmed;
@@ -47,7 +55,7 @@ const FALLBACK_SLIDES = [
     subtitle: 'Fresh vegetables, dairy, farm eggs & daily pantry essentials rushed directly to your doorstep.',
     ctaText: 'Order Now',
     ctaLink: ROUTES.PRODUCTS,
-    image: heroGroceriesImg,
+    image: CDN_FALLBACK_IMAGES[0],
   },
   {
     id: 'super-saver',
@@ -57,7 +65,7 @@ const FALLBACK_SLIDES = [
     subtitle: 'Unpolished pulses, stone-ground flours, aged basmati rice & cold-pressed oils at everyday wholesale prices.',
     ctaText: 'Shop Deals',
     ctaLink: `${ROUTES.PRODUCTS}?flashDeal=true`,
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80',
+    image: CDN_FALLBACK_IMAGES[1],
   },
   {
     id: 'welcome-offer',
@@ -68,7 +76,7 @@ const FALLBACK_SLIDES = [
     ctaText: 'Claim Offer',
     ctaLink: ROUTES.PRODUCTS,
     isCouponSlide: true,
-    image: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1400&q=80',
+    image: CDN_FALLBACK_IMAGES[2],
   },
 ];
 
@@ -148,7 +156,7 @@ export default function Hero() {
         subtitle: b.subtitle,
         ctaText: b.ctaText || 'Shop Now',
         ctaLink: b.link || ROUTES.PRODUCTS,
-        image: resolveBannerImageUrl(b.imageUrl, heroGroceriesImg),
+        image: resolveBannerImageUrl(b.imageUrl, CDN_FALLBACK_IMAGES[index % CDN_FALLBACK_IMAGES.length]),
         isCouponSlide:
           b.title?.toLowerCase().includes('coupon') ||
           b.title?.toLowerCase().includes('first50') ||
@@ -255,9 +263,9 @@ export default function Hero() {
   return (
     <section className="bg-[#f7f9f7] pt-2 pb-2 sm:pt-4 sm:pb-4">
       <Container className="px-3 sm:px-6">
-        {/* 1. Full-Bleed Background Image Hero Carousel */}
+        {/* 1. Full-Bleed Background Image Hero Carousel with Sleek Quick-Commerce Proportions */}
         <div
-          className="relative w-full h-[220px] sm:h-[300px] md:h-[360px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-stone-900"
+          className="relative w-full h-[170px] sm:h-[210px] md:h-[240px] rounded-3xl overflow-hidden shadow-lg border border-slate-200/80 bg-slate-900"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
@@ -270,59 +278,64 @@ export default function Hero() {
               transition={{ duration: 0.5, ease: 'easeInOut' }}
               className="absolute inset-0 w-full h-full flex items-center"
             >
-              {/* Full-Bleed Background Image */}
+              {/* Full-Bleed Background Image with Resilient Fallback */}
               <img
                 src={slide.image}
                 alt={slide.title}
                 className="absolute inset-0 w-full h-full object-cover object-center -z-10"
                 loading="eager"
+                onError={(e) => {
+                  const fallbackUrl = CDN_FALLBACK_IMAGES[activeSlideIndex % CDN_FALLBACK_IMAGES.length];
+                  if (e.currentTarget.src !== fallbackUrl) {
+                    e.currentTarget.src = fallbackUrl;
+                  }
+                }}
               />
 
-              {/* High-Contrast Readability Gradient Overlay on Left */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent pointer-events-none" />
-              <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+              {/* Elegant Transparent Dark-Slate Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/30 to-transparent pointer-events-none" />
 
               {/* Text & CTA Content Layer */}
-              <div className="relative z-10 p-5 sm:p-8 md:p-12 max-w-xl text-left">
+              <div className="relative z-10 p-3.5 sm:p-6 md:p-8 max-w-xl text-left">
                 {slide.badge && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white backdrop-blur-md px-3 py-1 text-[11px] sm:text-xs font-black shadow-xs mb-2 sm:mb-3 border border-emerald-400/30">
-                    <BadgeIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/95 text-white backdrop-blur-md px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-black shadow-xs mb-1 sm:mb-2.5 border border-emerald-400/30">
+                    <BadgeIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={2.4} />
                     <span>{slide.badge}</span>
                   </div>
                 )}
 
-                <h1 className="font-display text-xl sm:text-3xl md:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.12] text-white drop-shadow-md line-clamp-2">
+                <h1 className="font-display text-base sm:text-2xl md:text-3xl font-black tracking-tight leading-[1.15] text-white drop-shadow-md line-clamp-1 sm:line-clamp-2">
                   {slide.title}
                 </h1>
 
                 {slide.subtitle && (
-                  <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-stone-100 font-medium leading-relaxed drop-shadow-sm max-w-lg line-clamp-2">
+                  <p className="mt-1 sm:mt-2 text-[11px] sm:text-xs md:text-sm text-stone-100 font-medium leading-tight sm:leading-snug drop-shadow-sm max-w-lg line-clamp-1 sm:line-clamp-2">
                     {slide.subtitle}
                   </p>
                 )}
 
                 {/* Call-to-Action Group */}
-                <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-3">
+                <div className="mt-2.5 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                   <Link
                     to={slide.ctaLink}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0c831f] hover:bg-[#0a6d1a] px-5 py-2 sm:px-7 sm:py-3 text-xs sm:text-sm font-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0c831f] hover:bg-[#0a6d1a] px-4 py-1.5 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-black text-white shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span>{slide.ctaText}</span>
-                    <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
+                    <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
                   </Link>
 
                   {slide.isCouponSlide && (
                     <button
                       type="button"
                       onClick={handleCopyPromo}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/45 hover:bg-black/65 px-4 py-2 sm:px-4 sm:py-2.5 text-xs font-bold text-white backdrop-blur-md transition-colors cursor-pointer shadow-md"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-black/45 hover:bg-black/65 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[10px] sm:text-xs font-bold text-white backdrop-blur-md transition-colors cursor-pointer shadow-md"
                       title="Click to copy voucher code"
                     >
                       <span className="text-stone-300">Code:</span>
                       <strong className="font-mono text-emerald-300 tracking-wider font-extrabold">
                         {promoCode}
                       </strong>
-                      <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[9px] uppercase font-bold tracking-wide">
+                      <span className="flex items-center gap-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[8px] sm:text-[9px] uppercase font-bold tracking-wide">
                         {copied ? (
                           <>
                             <Check className="h-2.5 w-2.5 text-emerald-400" strokeWidth={2.5} />

@@ -140,12 +140,21 @@ export const adminService = {
   async uploadImage(file) {
     const formData = new FormData();
     formData.append('image', file);
-    const response = await apiClient.post('/admin/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data || response;
+    try {
+      const response = await apiClient.post('/banners/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data || response;
+    } catch (err) {
+      const fallbackRes = await apiClient.post('/admin/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return fallbackRes.data || fallbackRes;
+    }
   },
 };
 

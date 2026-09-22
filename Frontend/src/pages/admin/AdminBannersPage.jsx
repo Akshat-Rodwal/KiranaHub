@@ -20,6 +20,27 @@ import Button from '../../components/common/Button.jsx';
 import Modal, { useModal } from '../../components/common/Modal.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
 import { toast } from '../../components/common/Toast.jsx';
+import { API_BASE_URL } from '../../constants/index.js';
+
+// Resolve relative or remote banner image URLs cleanly with backend origin fallback
+const resolveBannerImageUrl = (url, fallback = '') => {
+  if (!url) return fallback;
+  const trimmed = String(url).trim();
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/uploads')) {
+    const rawApi = import.meta.env.VITE_API_BASE_URL || API_BASE_URL || 'https://kiranahub-backend.onrender.com';
+    const backendRoot = rawApi.replace(/\/api\/v1\/?$/, '');
+    return `${backendRoot}${trimmed}`;
+  }
+  return trimmed;
+};
 
 const GRADIENT_PRESETS = [
   { label: 'Deep Forest', value: 'from-emerald-950 via-[#054428] to-[#042f1a]' },
@@ -249,12 +270,15 @@ export default function AdminBannersPage() {
     try {
       toast.loading('Uploading slide image...', { id: 'slide-replace' });
       const uploadRes = await adminService.uploadImage(file);
-      const newImageUrl = uploadRes.data?.url || uploadRes.url;
+      const newImageUrl = uploadRes.data?.url || uploadRes.url || uploadRes.data?.relativePath;
 
       await saveBannerMutation.mutateAsync({
         _id: slide._id || slide.id,
         imageUrl: newImageUrl,
       });
+
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
+      queryClient.invalidateQueries({ queryKey: ['banners'] });
 
       toast.success('Slide Image Updated!', {
         id: 'slide-replace',
@@ -311,6 +335,9 @@ export default function AdminBannersPage() {
       };
 
       await saveBannerMutation.mutateAsync(payload);
+
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
+      queryClient.invalidateQueries({ queryKey: ['banners'] });
 
       // Clear pending file
       setSubBannerFiles((prev) => {
@@ -425,18 +452,18 @@ export default function AdminBannersPage() {
                       className="rounded-2xl bg-white border border-stone-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col"
                     >
                       {/* Live Visual Card (Full Background Image) */}
-                      <div className="relative p-4 text-white overflow-hidden bg-stone-900 min-h-[140px] flex items-center">
-                        {/* Background Image */}
+                      <div className="relative p-4 text-white overflow-hidden bg-slate-900 min-h-[140px] flex items-center">
+                        {/* Background Image with Fallback */}
                         <img
-                          src={slide.imageUrl}
+                          src={resolveBannerImageUrl(slide.imageUrl, 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80')}
                           alt={slide.title}
                           className="absolute inset-0 w-full h-full object-cover object-center"
                           onError={(e) => {
-                            e.target.style.display = 'none';
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
                           }}
                         />
                         {/* Dark Gradient Overlay for Readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent pointer-events-none" />
 
                         <div className="relative z-10 min-w-0">
                           <span className="inline-block text-[9px] uppercase font-bold tracking-wider bg-black/40 backdrop-blur-md px-2 py-0.5 rounded mb-1 border border-white/20">
@@ -567,7 +594,10 @@ export default function AdminBannersPage() {
                 const currentTitle = edited.title !== undefined ? edited.title : existingDoc?.title || slotConfig.defaultTitle;
                 const currentSubtitle = edited.subtitle !== undefined ? edited.subtitle : existingDoc?.subtitle || slotConfig.defaultSubtitle;
                 const currentLink = edited.link !== undefined ? edited.link : existingDoc?.link || slotConfig.defaultLink;
-                const displayImage = pickedFile?.previewUrl || existingDoc?.imageUrl || slotConfig.defaultImage;
+                const displayImage = resolveBannerImageUrl(
+                  pickedFile?.previewUrl || edited.imageUrl || existingDoc?.imageUrl,
+                  slotConfig.defaultImage
+                );
 
                 return (
                   <div
@@ -575,19 +605,19 @@ export default function AdminBannersPage() {
                     className="rounded-2xl bg-white border border-stone-200 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col"
                   >
                     {/* Top Preview Tile (Full Background Image) */}
-                    <div className="relative p-4 text-white overflow-hidden bg-stone-900 min-h-[135px] flex items-center">
+                    <div className="relative p-4 text-white overflow-hidden bg-slate-900 min-h-[135px] flex items-center">
                       {/* Background Image */}
                       <img
                         src={displayImage}
                         alt={currentTitle}
                         className="absolute inset-0 w-full h-full object-cover object-center"
                         onError={(e) => {
-                          e.target.style.display = 'none';
+                          e.currentTarget.src = slotConfig.defaultImage;
                         }}
                       />
                       {/* Dark Gradient Overlay for Readability */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent pointer-events-none" />
 
                       <div className="relative z-10 min-w-0">
                         <span className="inline-block text-[9px] uppercase font-black tracking-wider bg-black/40 backdrop-blur-md px-2 py-0.5 rounded mb-1 border border-white/20">
@@ -640,6 +670,25 @@ export default function AdminBannersPage() {
                               <Check className="h-3 w-3" /> Ready to upload: {pickedFile.file.name}
                             </p>
                           )}
+                        </div>
+
+                        {/* Direct Image URL Input */}
+                        <div>
+                          <label className="block text-xs font-semibold text-stone-700 mb-1">
+                            Or Image URL (CDN / Unsplash / Path):
+                          </label>
+                          <input
+                            type="text"
+                            value={edited.imageUrl !== undefined ? edited.imageUrl : existingDoc?.imageUrl || ''}
+                            onChange={(e) =>
+                              setSubBannerEdits((prev) => ({
+                                ...prev,
+                                [slotKey]: { ...(prev[slotKey] || {}), imageUrl: e.target.value },
+                              }))
+                            }
+                            placeholder="https://images.unsplash.com/photo-..."
+                            className="w-full rounded-xl border border-stone-200 px-3 py-1.5 text-xs text-stone-900 focus:border-brand-500 focus:outline-none"
+                          />
                         </div>
 
                         {/* Title Input */}

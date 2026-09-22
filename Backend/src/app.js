@@ -83,8 +83,13 @@ if (config.nodeEnv !== 'production') {
   app.use(morgan('combined'));
 }
 
-// Serve static uploaded assets (banners, media)
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+// Serve static uploaded assets (banners, media) with cross-origin headers
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads'), {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 
 app.disable('x-powered-by');
 
