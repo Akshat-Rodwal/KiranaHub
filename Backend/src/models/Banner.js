@@ -32,10 +32,21 @@ const bannerSchema = new mongoose.Schema(
       maxlength: [80, 'Brand tag cannot exceed 80 characters'],
       default: '',
     },
+    badge: {
+      type: String,
+      trim: true,
+      maxlength: [80, 'Badge cannot exceed 80 characters'],
+      default: '',
+    },
     imageUrl: {
       type: String,
       required: [true, 'Image URL is required'],
       trim: true,
+    },
+    bgImageUrl: {
+      type: String,
+      trim: true,
+      default: '',
     },
     bgColor: {
       type: String,
@@ -64,11 +75,6 @@ const bannerSchema = new mongoose.Schema(
     },
     // Optional legacy fields for backward compatibility
     position: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    badge: {
       type: String,
       trim: true,
       default: '',
