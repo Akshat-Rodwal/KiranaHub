@@ -778,20 +778,19 @@ export default function AdminBannersPage() {
                   className="rounded-3xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                 >
                   {/* Visual Card Simulation */}
-                  <div
-                    className="p-5 h-[190px] relative flex flex-col justify-between overflow-hidden"
-                    style={{ backgroundColor: card.bgColor || '#F8FAFC' }}
-                  >
-                    {card.bgImageUrl && (
-                      <>
-                        <img
-                          src={resolveImageUrl(card.bgImageUrl)}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover -z-20"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent -z-10 pointer-events-none" />
-                      </>
-                    )}
+                  <div className="p-5 h-[190px] relative flex flex-col justify-between overflow-hidden rounded-t-3xl bg-slate-900">
+                    {/* Full Background Image */}
+                    <img
+                      src={resolveImageUrl(card.imageUrl || card.image)}
+                      alt={card.title}
+                      className="absolute inset-0 w-full h-full object-cover -z-20"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent -z-10" />
 
                     {card.brandTag && (
                       <div className="absolute top-3 right-3 z-10 bg-white/95 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs text-slate-800 border border-slate-100">
@@ -799,43 +798,20 @@ export default function AdminBannersPage() {
                       </div>
                     )}
 
-                    <div className="max-w-[62%] z-10">
-                      <h3
-                        className={`font-black text-base tracking-tight leading-tight line-clamp-2 ${
-                          isLightText ? 'text-white' : 'text-slate-900'
-                        }`}
-                      >
+                    <div className="max-w-[70%] z-10">
+                      <h3 className="font-black text-base tracking-tight leading-tight line-clamp-2 text-white drop-shadow-sm">
                         {card.title}
                       </h3>
-                      <p
-                        className={`text-[11px] font-medium mt-1 line-clamp-2 ${
-                          isLightText ? 'text-white/85' : 'text-slate-600'
-                        }`}
-                      >
+                      <p className="text-[11px] font-medium mt-1 line-clamp-2 text-slate-200">
                         {card.subtitle}
                       </p>
                     </div>
 
                     <div className="pt-2 z-10">
-                      <span
-                        className={`inline-block px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          isLightText ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'
-                        }`}
-                      >
+                      <span className="inline-block px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white text-slate-900 shadow-sm">
                         {card.ctaText || 'SHOP NOW'}
                       </span>
                     </div>
-
-                    <img
-                      src={resolveImageUrl(card.imageUrl)}
-                      alt={card.title}
-                      className="absolute right-3 bottom-2 max-h-[140px] w-28 object-contain drop-shadow"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80';
-                      }}
-                    />
                   </div>
 
                   {/* Card Info & Actions Footer */}
@@ -925,20 +901,19 @@ export default function AdminBannersPage() {
                   <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                     Real-Time Storefront Preview
                   </span>
-                  <div
-                    className="rounded-3xl overflow-hidden relative p-6 h-[210px] flex flex-col justify-between shadow-sm border border-black/5 transition-all"
-                    style={{ backgroundColor: cardFormData.bgColor || '#F8FAFC' }}
-                  >
-                    {cardFormData.bgImageUrl && (
-                      <>
-                        <img
-                          src={resolveImageUrl(cardFormData.bgImageUrl)}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover -z-20"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent -z-10 pointer-events-none" />
-                      </>
-                    )}
+                  <div className="rounded-3xl overflow-hidden relative p-6 h-[210px] flex flex-col justify-between shadow-sm border border-black/5 bg-slate-900 transition-all">
+                    {/* Full Background Image */}
+                    <img
+                      src={resolveImageUrl(cardFormData.imageUrl || cardFormData.image)}
+                      alt={cardFormData.title}
+                      className="absolute inset-0 w-full h-full object-cover -z-20"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent -z-10" />
 
                     {cardFormData.brandTag && (
                       <div className="absolute top-4 right-4 z-10 bg-white/95 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-xs text-slate-800 border border-slate-100">
@@ -946,46 +921,21 @@ export default function AdminBannersPage() {
                       </div>
                     )}
 
-                    <div className="max-w-[65%] z-10">
-                      <h3
-                        className={`text-2xl font-black tracking-tight leading-tight line-clamp-2 ${
-                          cardFormData.textColor === 'light' ? 'text-white' : 'text-slate-900'
-                        }`}
-                      >
+                    <div className="max-w-[70%] z-10">
+                      <h3 className="text-2xl font-black tracking-tight leading-tight line-clamp-2 text-white drop-shadow-sm">
                         {cardFormData.title || 'Headline Here'}
                       </h3>
-                      <p
-                        className={`text-xs font-medium mt-1.5 line-clamp-2 leading-snug ${
-                          cardFormData.textColor === 'light' ? 'text-white/85' : 'text-slate-600'
-                        }`}
-                      >
+                      <p className="text-xs font-medium mt-1.5 line-clamp-2 leading-snug text-slate-200">
                         {cardFormData.subtitle || 'Supporting subtitle goes here'}
                       </p>
                     </div>
 
                     <div className="pt-2 z-10">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow ${
-                          cardFormData.textColor === 'light'
-                            ? 'bg-white text-slate-900'
-                            : 'bg-slate-900 text-white'
-                        }`}
-                      >
+                      <span className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow bg-white text-slate-900">
                         <span>{cardFormData.ctaText || 'SHOP NOW'}</span>
                         <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
                       </span>
                     </div>
-
-                    <img
-                      src={resolveImageUrl(cardFormData.imageUrl)}
-                      alt={cardFormData.title}
-                      className="absolute right-4 bottom-2 max-h-[160px] w-36 object-contain drop-shadow-xl"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80';
-                      }}
-                    />
                   </div>
                 </div>
 
