@@ -6,7 +6,7 @@ import httpStatus from '../constants/httpStatus.js';
 import { defaultBanners } from '../seeders/data/banners.js';
 
 /**
- * Ensures that all 4 slots (hero_carousel, sub_banner_1, sub_banner_2, sub_banner_3)
+ * Ensures that both 'top_single' and 'instamart_card' banner types
  * have active default banners seeded in MongoDB.
  */
 export const ensureDefaultBanners = async () => {
@@ -16,12 +16,12 @@ export const ensureDefaultBanners = async () => {
     return;
   }
 
-  const existingPositions = await Banner.distinct('position');
-  const requiredPositions = ['hero_carousel', 'sub_banner_1', 'sub_banner_2', 'sub_banner_3'];
-  const missingPositions = requiredPositions.filter((pos) => !existingPositions.includes(pos));
+  const existingTypes = await Banner.distinct('bannerType');
+  const requiredTypes = ['top_single', 'instamart_card'];
+  const missingTypes = requiredTypes.filter((t) => !existingTypes.includes(t));
 
-  if (missingPositions.length > 0) {
-    const toInsert = defaultBanners.filter((b) => missingPositions.includes(b.position));
+  if (missingTypes.length > 0) {
+    const toInsert = defaultBanners.filter((b) => missingTypes.includes(b.bannerType));
     if (toInsert.length > 0) {
       await Banner.insertMany(toInsert);
     }
@@ -30,33 +30,46 @@ export const ensureDefaultBanners = async () => {
 
 /**
  * Public: Get active banners
- * Groups into hero_carousel, sub_banner_1, sub_banner_2, sub_banner_3
+ * Supports ?type=top_single or ?type=instamart_card
  */
 export const getBanners = asyncHandler(async (req, res) => {
   await ensureDefaultBanners();
   const filter = {};
+
+  // Active status filter
   if (req.query.active === 'false' || req.query.isActive === 'false') {
     filter.isActive = false;
   } else {
-    // Default or active=true: only return active banners for customer storefront
     filter.isActive = true;
   }
+
+  // Type filter
+  const requestedType = req.query.type || req.query.bannerType;
+  if (requestedType) {
+    filter.$or = [
+      { bannerType: requestedType },
+      { position: requestedType },
+    ];
+  }
+
   const banners = await Banner.find(filter).sort({ order: 1, createdAt: 1 }).lean();
 
-  const heroCarousel = banners.filter((b) => b.position === 'hero_carousel');
-  const subBanner1 = banners.find((b) => b.position === 'sub_banner_1') || null;
-  const subBanner2 = banners.find((b) => b.position === 'sub_banner_2') || null;
-  const subBanner3 = banners.find((b) => b.position === 'sub_banner_3') || null;
+  const topSingle =
+    banners.find((b) => b.bannerType === 'top_single' || b.position === 'top_single') ||
+    banners[0] ||
+    null;
+
+  const instamartCards = banners.filter(
+    (b) => b.bannerType === 'instamart_card' || (!b.bannerType && b.position !== 'top_single')
+  );
 
   return res.status(httpStatus.OK).json({
     success: true,
     message: 'Banners retrieved successfully',
     data: {
       banners,
-      hero_carousel: heroCarousel,
-      sub_banner_1: subBanner1,
-      sub_banner_2: subBanner2,
-      sub_banner_3: subBanner3,
+      top_single: topSingle,
+      instamart_cards: instamartCards,
       all: banners,
     },
     banners,
@@ -68,7 +81,7 @@ export const getBanners = asyncHandler(async (req, res) => {
  */
 export const getAdminBanners = asyncHandler(async (req, res) => {
   await ensureDefaultBanners();
-  const banners = await Banner.find().sort({ position: 1, order: 1, createdAt: -1 }).lean();
+  const banners = await Banner.find().sort({ bannerType: 1, order: 1, createdAt: -1 }).lean();
 
   return res.status(httpStatus.OK).json(
     new ApiResponse(httpStatus.OK, 'Admin banners retrieved successfully', banners)
@@ -79,28 +92,49 @@ export const getAdminBanners = asyncHandler(async (req, res) => {
  * Admin: Create a new banner
  */
 export const createBanner = asyncHandler(async (req, res) => {
-  const { title, subtitle, imageUrl, link, position, badge, ctaText, bgGradient, order, isActive } = req.body;
+  const {
+    bannerType = 'instamart_card',
+    title,
+    subtitle,
+    ctaText,
+    brandTag,
+    imageUrl,
+    bgColor,
+    textColor,
+    targetType,
+    targetId,
+    link,
+    order,
+    isActive,
+    position,
+  } = req.body;
 
-  if (!title || !imageUrl) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Banner title and image URL are required');
+  if (!imageUrl) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Image URL is required');
   }
 
-  const validPositions = ['hero_carousel', 'sub_banner_1', 'sub_banner_2', 'sub_banner_3'];
-  if (position && !validPositions.includes(position)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, `Position must be one of: ${validPositions.join(', ')}`);
+  let resolvedLink = link?.trim() || '/products';
+  if (targetType === 'category' && targetId) {
+    resolvedLink = `/products?category=${encodeURIComponent(targetId.trim())}`;
+  } else if (targetType === 'product' && targetId) {
+    resolvedLink = `/product/${encodeURIComponent(targetId.trim())}`;
   }
 
   const banner = await Banner.create({
-    title: title.trim(),
+    bannerType: bannerType || 'instamart_card',
+    title: title?.trim() || '',
     subtitle: subtitle?.trim() || '',
+    ctaText: ctaText?.trim() || 'SHOP NOW',
+    brandTag: brandTag?.trim() || '',
     imageUrl: imageUrl.trim(),
-    link: link?.trim() || '/products',
-    position: position || 'hero_carousel',
-    badge: badge?.trim() || '',
-    ctaText: ctaText?.trim() || 'Shop Now',
-    bgGradient: bgGradient?.trim() || '',
+    bgColor: bgColor?.trim() || '#F8FAFC',
+    textColor: textColor === 'light' ? 'light' : 'dark',
+    targetType: targetType || 'category',
+    targetId: targetId?.trim() || '',
+    link: resolvedLink,
     order: Number.isInteger(Number(order)) ? Number(order) : 0,
     isActive: typeof isActive === 'boolean' ? isActive : true,
+    position: position || (bannerType === 'top_single' ? 'top_single' : 'hero_carousel'),
   });
 
   return res.status(httpStatus.CREATED).json(
@@ -113,12 +147,13 @@ export const createBanner = asyncHandler(async (req, res) => {
  */
 export const updateBanner = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const updates = { ...req.body };
 
-  if (updates.position) {
-    const validPositions = ['hero_carousel', 'sub_banner_1', 'sub_banner_2', 'sub_banner_3'];
-    if (!validPositions.includes(updates.position)) {
-      throw new ApiError(httpStatus.BAD_REQUEST, `Position must be one of: ${validPositions.join(', ')}`);
+  if (updates.targetType && updates.targetId !== undefined) {
+    if (updates.targetType === 'category' && updates.targetId) {
+      updates.link = `/products?category=${encodeURIComponent(updates.targetId.trim())}`;
+    } else if (updates.targetType === 'product' && updates.targetId) {
+      updates.link = `/product/${encodeURIComponent(updates.targetId.trim())}`;
     }
   }
 
