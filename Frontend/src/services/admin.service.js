@@ -78,8 +78,13 @@ export const adminService = {
    * @returns {Promise<Object>}
    */
   async getCategories() {
-    const response = await apiClient.get('/categories');
-    return response.data;
+    try {
+      const response = await apiClient.get('/admin/categories');
+      return response.data;
+    } catch {
+      const fallback = await apiClient.get('/categories', { params: { includeInactive: true } });
+      return fallback.data;
+    }
   },
 
   /**
@@ -89,6 +94,27 @@ export const adminService = {
    */
   async createCategory(payload) {
     const response = await apiClient.post('/categories', payload);
+    return response.data;
+  },
+
+  /**
+   * Update category (admin/manager)
+   * @param {string} idOrSlug
+   * @param {Object} payload
+   * @returns {Promise<Object>}
+   */
+  async updateCategory(idOrSlug, payload) {
+    const response = await apiClient.put(`/categories/${idOrSlug}`, payload);
+    return response.data;
+  },
+
+  /**
+   * Delete category (admin/manager)
+   * @param {string} idOrSlug
+   * @returns {Promise<Object>}
+   */
+  async deleteCategory(idOrSlug) {
+    const response = await apiClient.delete(`/categories/${idOrSlug}`);
     return response.data;
   },
 

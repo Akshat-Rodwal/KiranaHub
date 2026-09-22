@@ -4,7 +4,9 @@ import httpStatus from '../constants/httpStatus.js';
 import categoryService from '../services/category.service.js';
 
 const getCategories = asyncHandler(async (req, res) => {
-  const categories = await categoryService.list(req.validatedQuery);
+  const query = req.validatedQuery || req.query || {};
+  const includeInactive = query.includeInactive === true || query.includeInactive === 'true' || query.all === 'true';
+  const categories = await categoryService.list({ includeInactive });
 
   return res
     .status(httpStatus.OK)
@@ -12,13 +14,28 @@ const getCategories = asyncHandler(async (req, res) => {
       new ApiResponse(
         httpStatus.OK,
         'Categories retrieved successfully',
-        { items: categories },
+        { items: categories, categories },
+      ),
+    );
+});
+
+const getAdminCategories = asyncHandler(async (_req, res) => {
+  const categories = await categoryService.list({ includeInactive: true });
+
+  return res
+    .status(httpStatus.OK)
+    .json(
+      new ApiResponse(
+        httpStatus.OK,
+        'Admin categories retrieved successfully',
+        { items: categories, categories },
       ),
     );
 });
 
 const getCategoryBySlug = asyncHandler(async (req, res) => {
-  const category = await categoryService.bySlug(req.validatedParams.slug);
+  const slug = req.validatedParams?.slug || req.params?.slug;
+  const category = await categoryService.bySlug(slug);
 
   return res
     .status(httpStatus.OK)
@@ -32,7 +49,8 @@ const getCategoryBySlug = asyncHandler(async (req, res) => {
 });
 
 const createCategory = asyncHandler(async (req, res) => {
-  const category = await categoryService.create(req.validatedBody);
+  const body = req.validatedBody || req.body;
+  const category = await categoryService.create(body);
 
   return res
     .status(httpStatus.CREATED)
@@ -46,10 +64,9 @@ const createCategory = asyncHandler(async (req, res) => {
 });
 
 const updateCategory = asyncHandler(async (req, res) => {
-  const category = await categoryService.update(
-    req.validatedParams.slug,
-    req.validatedBody,
-  );
+  const slug = req.validatedParams?.slug || req.params?.slug;
+  const body = req.validatedBody || req.body;
+  const category = await categoryService.update(slug, body);
 
   return res
     .status(httpStatus.OK)
@@ -63,14 +80,15 @@ const updateCategory = asyncHandler(async (req, res) => {
 });
 
 const deleteCategory = asyncHandler(async (req, res) => {
-  const result = await categoryService.remove(req.validatedParams.slug);
+  const slug = req.validatedParams?.slug || req.params?.slug;
+  const result = await categoryService.remove(slug);
 
   return res
     .status(httpStatus.OK)
     .json(
       new ApiResponse(
         httpStatus.OK,
-        'Category deactivated successfully',
+        'Category deleted successfully',
         result,
       ),
     );
@@ -78,6 +96,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 
 export {
   getCategories,
+  getAdminCategories,
   getCategoryBySlug,
   createCategory,
   updateCategory,
@@ -86,6 +105,7 @@ export {
 
 export default {
   getCategories,
+  getAdminCategories,
   getCategoryBySlug,
   createCategory,
   updateCategory,

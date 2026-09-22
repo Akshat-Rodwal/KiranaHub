@@ -6,6 +6,13 @@ import {
   updateProductStock,
 } from '../controllers/adminController.js';
 import {
+  getCategories,
+  getAdminCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from '../controllers/categoryController.js';
+import {
   getAdminBanners,
   createBanner,
   updateBanner,
@@ -41,6 +48,12 @@ router.patch('/orders/:id/status', validateObjectIdParam('id'), validateUpdateOr
 
 // Inventory Stock Quick Updater
 router.patch('/products/:id/stock', validateObjectIdParam('id'), validateUpdateProductStock, updateProductStock);
+
+// Category Management
+router.get('/categories', getAdminCategories);
+router.post('/categories', createCategory);
+router.put('/categories/:slug', updateCategory);
+router.delete('/categories/:slug', deleteCategory);
 
 // Store Settings & Announcements
 router.get('/settings', getPublicSettings);

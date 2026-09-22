@@ -1,75 +1,36 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Sparkles,
-  Milk,
-  Apple,
-  Coffee,
-  Cookie,
-  Utensils,
-  Gift,
-  Wheat,
-  Flame,
-  Droplets,
-  Fish,
-  Salad,
-  Baby,
-  Pill,
-  Home,
-  Heart,
-  PawPrint,
-} from 'lucide-react';
 import Container from '../common/Container.jsx';
 import CategoryCard from '../ui/CategoryCard.jsx';
-import { ROUTES, CATEGORY_ALIAS_MAP } from '../../constants/index.js';
+import { ROUTES } from '../../constants/index.js';
 import { useCategories } from '../../hooks/useCategories.js';
 
-const BLINKIT_CATEGORIES = [
-  { slug: 'paan-corner', name: 'Paan Corner', icon: Sparkles, packImage: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'dairy-bread-eggs', name: 'Dairy, Bread & Eggs', icon: Milk, packImage: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'fruits-vegetables', name: 'Fruits & Vegetables', icon: Apple, packImage: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'cold-drinks-juices', name: 'Cold Drinks & Juices', icon: Coffee, packImage: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'snacks-munchies', name: 'Snacks & Munchies', icon: Cookie, packImage: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'breakfast-instant', name: 'Breakfast & Instant Food', icon: Utensils, packImage: 'https://images.unsplash.com/photo-1584776296944-ab6fb57b0bdd?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'sweet-tooth', name: 'Sweet Tooth', icon: Gift, packImage: 'https://images.unsplash.com/photo-1548365328-8c6db3220e4c?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'bakery-biscuits', name: 'Bakery & Biscuits', icon: Cookie, packImage: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'tea-coffee-drinks', name: 'Tea, Coffee & Milk Drinks', icon: Coffee, packImage: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'atta-rice-dal', name: 'Atta, Rice & Dal', icon: Wheat, packImage: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'masala-oil', name: 'Masala, Oil & More', icon: Flame, packImage: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'sauces-spreads', name: 'Sauces & Spreads', icon: Droplets, packImage: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'chicken-meat-fish', name: 'Chicken, Meat & Fish', icon: Fish, packImage: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'organic-healthy', name: 'Organic & Healthy Living', icon: Salad, packImage: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'baby-care', name: 'Baby Care', icon: Baby, packImage: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'pharma-wellness', name: 'Pharma & Wellness', icon: Pill, packImage: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'cleaning-essentials', name: 'Cleaning Essentials', icon: Home, packImage: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'home-office', name: 'Home & Office', icon: Home, packImage: 'https://images.unsplash.com/photo-1584813470613-5b1c1cad3d69?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'personal-care', name: 'Personal Care', icon: Heart, packImage: 'https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=300&q=80' },
-  { slug: 'pet-care', name: 'Pet Care', icon: PawPrint, packImage: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=300&q=80' },
-];
-
 export default function CategorySection() {
-  const { data: serverCategories } = useCategories();
+  const { data: categories = [], isLoading } = useCategories();
 
-  // Merge server category images/counts if available, ensuring real pack imagery
-  const displayCategories = BLINKIT_CATEGORIES.map((cat) => {
-    const resolvedSlug = CATEGORY_ALIAS_MAP[cat.slug] || cat.slug;
-    const matched = serverCategories?.find(
-      (c) =>
-        c.slug === resolvedSlug ||
-        c.slug === cat.slug ||
-        c.name.toLowerCase().includes(cat.name.split(' ')[0].toLowerCase())
-    );
-    const targetSlug = matched?.slug || resolvedSlug;
-    const isSvgInitial = matched?.image && matched.image.startsWith('data:image/svg');
-    const finalImage = (!matched?.image || isSvgInitial) ? cat.packImage : matched.image;
+  // Filter to active categories only
+  const activeCategories = Array.isArray(categories)
+    ? categories.filter((c) => c.isActive !== false)
+    : [];
 
-    return {
-      ...cat,
-      image: finalImage,
-      count: matched?.productCount,
-      to: ROUTES.CATEGORY.replace(':slug', targetSlug),
-    };
-  });
+  // Skeleton loader for quick-commerce rounded category cards
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 sm:gap-4">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="flex flex-col items-center justify-start shrink-0 animate-pulse">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl sm:rounded-full bg-slate-200/80 border border-slate-200/60 p-3.5 mb-2" />
+          <div className="h-3 w-16 bg-slate-200 rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+
+  // If not loading and no active categories exist, gracefully return null
+  if (!isLoading && activeCategories.length === 0) {
+    return null;
+  }
+
+  const isDualRowMobile = activeCategories.length > 6;
 
   return (
     <motion.section
@@ -92,33 +53,43 @@ export default function CategorySection() {
           </Link>
         </div>
 
-        {/* 1. Mobile Layout: Dual-Row Horizontal Scroll with Hidden Scrollbars */}
-        <div className="md:hidden grid grid-rows-2 grid-flow-col auto-cols-[82px] sm:auto-cols-[96px] gap-2.5 sm:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-2 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0">
-          {displayCategories.map((category) => (
-            <CategoryCard
-              key={category.slug}
-              name={category.name}
-              icon={category.icon}
-              image={category.image}
-              count={category.count}
-              to={category.to}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          renderSkeletons()
+        ) : (
+          <>
+            {/* 1. Mobile Layout: Horizontal Scroll with Sleek Peek */}
+            <div
+              className={`md:hidden grid ${
+                isDualRowMobile ? 'grid-rows-2' : 'grid-rows-1'
+              } grid-flow-col auto-cols-[86px] sm:auto-cols-[100px] gap-2.5 sm:gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-2 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0`}
+            >
+              {activeCategories.map((category) => (
+                <CategoryCard
+                  key={category._id || category.slug}
+                  slug={category.slug}
+                  name={category.name}
+                  image={category.image}
+                  count={category.itemCount || category.productCount}
+                  to={ROUTES.CATEGORY.replace(':slug', category.slug)}
+                />
+              ))}
+            </div>
 
-        {/* 2. Desktop Layout: Clean 8-Column Grid */}
-        <div className="hidden md:grid md:grid-cols-8 gap-3 lg:gap-4">
-          {displayCategories.map((category) => (
-            <CategoryCard
-              key={category.slug}
-              name={category.name}
-              icon={category.icon}
-              image={category.image}
-              count={category.count}
-              to={category.to}
-            />
-          ))}
-        </div>
+            {/* 2. Desktop Layout: Responsive Grid for Database Categories */}
+            <div className="hidden md:grid md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-10 gap-3 lg:gap-4 justify-items-center">
+              {activeCategories.map((category) => (
+                <CategoryCard
+                  key={category._id || category.slug}
+                  slug={category.slug}
+                  name={category.name}
+                  image={category.image}
+                  count={category.itemCount || category.productCount}
+                  to={ROUTES.CATEGORY.replace(':slug', category.slug)}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </Container>
     </motion.section>
   );

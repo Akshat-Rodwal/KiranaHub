@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getCategories,
+  getAdminCategories,
   getCategoryBySlug,
   createCategory,
   updateCategory,
@@ -15,6 +16,14 @@ import {
 import { verifyJWT, authorizeRoles } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+// Admin Route (accessible via /api/v1/categories/admin)
+router.get(
+  '/admin',
+  verifyJWT,
+  authorizeRoles('admin', 'manager'),
+  getAdminCategories,
+);
 
 // Public Read Routes
 router.get('/', validateCategoryQuery, getCategories);

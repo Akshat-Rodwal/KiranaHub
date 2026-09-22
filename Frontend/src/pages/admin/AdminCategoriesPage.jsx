@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Edit2, Trash2 } from 'lucide-react';
 
 import adminService from '../../services/admin.service.js';
 import Badge from '../../components/common/Badge.jsx';
@@ -17,11 +18,13 @@ export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
   const categoryModal = useModal('admin-category-modal');
 
+  const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
     image: '',
+    isActive: true,
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -36,7 +39,11 @@ export default function AdminCategoriesPage() {
     staleTime: 60 * 1000,
   });
 
-  const categories = categoriesRes?.data?.items || categoriesRes?.data || [];
+  const categories =
+    categoriesRes?.data?.categories ||
+    categoriesRes?.data?.items ||
+    categoriesRes?.data ||
+    (Array.isArray(categoriesRes) ? categoriesRes : []);
 
   const createCategoryMutation = useMutation({
     mutationFn: (payload) => adminService.createCategory(payload),
@@ -46,6 +53,7 @@ export default function AdminCategoriesPage() {
       });
       categoryModal.close();
       queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
       queryClient.invalidateQueries({ queryKey: ['categories-all'] });
     },
     onError: (err) => {
@@ -55,19 +63,78 @@ export default function AdminCategoriesPage() {
     },
   });
 
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ identifier, payload }) => adminService.updateCategory(identifier, payload),
+    onSuccess: () => {
+      toast.success('Category Updated', {
+        description: 'Category details updated successfully.',
+      });
+      categoryModal.close();
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories-all'] });
+    },
+    onError: (err) => {
+      toast.error('Update Failed', {
+        description: err?.message || 'Could not update category.',
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (identifier) => adminService.deleteCategory(identifier),
+    onSuccess: () => {
+      toast.success('Category Deleted', {
+        description: 'Category removed successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories-all'] });
+    },
+    onError: (err) => {
+      toast.error('Delete Failed', {
+        description: err?.message || 'Could not delete category.',
+      });
+    },
+  });
+
   const openAddModal = () => {
-    setFormData({ name: '', slug: '', description: '', image: '' });
+    setEditingCategory(null);
+    setFormData({ name: '', slug: '', description: '', image: '', isActive: true });
     setFormErrors({});
     categoryModal.open();
   };
 
+  const openEditModal = (cat) => {
+    setEditingCategory(cat);
+    setFormData({
+      name: cat.name || '',
+      slug: cat.slug || '',
+      description: cat.description || '',
+      image: cat.image || '',
+      isActive: cat.isActive !== false,
+    });
+    setFormErrors({});
+    categoryModal.open();
+  };
+
+  const handleDelete = (cat) => {
+    if (window.confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
+      deleteCategoryMutation.mutate(cat.slug || cat._id);
+    }
+  };
+
   const handleNameChange = (e) => {
     const name = e.target.value;
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    setFormData({ ...formData, name, slug });
+    if (!editingCategory) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      setFormData({ ...formData, name, slug });
+    } else {
+      setFormData({ ...formData, name });
+    }
   };
 
   const handleSubmit = (e) => {
@@ -81,12 +148,22 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    createCategoryMutation.mutate({
+    const payload = {
       name: formData.name.trim(),
       slug: formData.slug.trim(),
       description: formData.description.trim(),
       image: formData.image.trim(),
-    });
+      isActive: formData.isActive,
+    };
+
+    if (editingCategory) {
+      updateCategoryMutation.mutate({
+        identifier: editingCategory.slug || editingCategory._id,
+        payload,
+      });
+    } else {
+      createCategoryMutation.mutate(payload);
+    }
   };
 
   return (
@@ -138,6 +215,7 @@ export default function AdminCategoriesPage() {
         ) : categories.length === 0 ? (
           <div className="p-12 text-center">
             <h3 className="font-display font-bold text-base text-text-primary">No categories found</h3>
+            <p className="text-xs text-text-muted mt-1">Add your first category or click refresh to load default categories.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -147,7 +225,9 @@ export default function AdminCategoriesPage() {
                   <th className="px-5 py-3">Category</th>
                   <th className="px-5 py-3">Slug Identifier</th>
                   <th className="px-5 py-3">Description</th>
+                  <th className="px-5 py-3">Products</th>
                   <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -159,7 +239,7 @@ export default function AdminCategoriesPage() {
                           <img
                             src={cat.image}
                             alt={cat.name}
-                            className="h-9 w-9 rounded-xl object-cover border border-border bg-surface-soft shrink-0"
+                            className="h-9 w-9 rounded-xl object-contain border border-border bg-surface-soft shrink-0 p-1"
                             onError={(e) => {
                               e.target.style.display = 'none';
                             }}
@@ -175,13 +255,41 @@ export default function AdminCategoriesPage() {
                     <td className="px-5 py-3.5 font-mono text-text-muted text-[11px]">
                       {cat.slug}
                     </td>
-                    <td className="px-5 py-3.5 text-text-secondary truncate max-w-sm">
+                    <td className="px-5 py-3.5 text-text-secondary truncate max-w-xs">
                       {cat.description || '—'}
+                    </td>
+                    <td className="px-5 py-3.5 font-semibold text-text-muted">
+                      {typeof cat.productCount === 'number'
+                        ? `${cat.productCount} items`
+                        : typeof cat.itemCount === 'number'
+                        ? `${cat.itemCount} items`
+                        : '—'}
                     </td>
                     <td className="px-5 py-3.5">
                       <Badge variant={cat.isActive !== false ? 'success' : 'secondary'} size="xs">
                         {cat.isActive !== false ? 'Active' : 'Disabled'}
                       </Badge>
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(cat)}
+                          className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                          title="Edit Category"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(cat)}
+                          disabled={deleteCategoryMutation.isPending}
+                          className="p-1.5 text-slate-500 hover:text-danger-600 hover:bg-danger-50 rounded-lg transition-colors"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -191,11 +299,11 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      {/* Add Category Modal */}
+      {/* Add / Edit Category Modal */}
       <Modal
         id="admin-category-modal"
-        title="Add Store Category"
-        description="Create a new grocery department or aisle."
+        title={editingCategory ? 'Edit Store Category' : 'Add Store Category'}
+        description={editingCategory ? 'Update aisle details and visibility.' : 'Create a new grocery department or aisle.'}
         size="md"
         hideFooter
       >
@@ -236,7 +344,7 @@ export default function AdminCategoriesPage() {
               type="url"
               value={formData.image}
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
+              placeholder="https://cdn-icons-png.flaticon.com/..."
               className="w-full rounded-xl border border-border px-3 py-2 text-xs text-text-primary focus:border-brand-500 focus:outline-none"
             />
           </div>
@@ -254,6 +362,19 @@ export default function AdminCategoriesPage() {
             />
           </div>
 
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="cat-is-active"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500"
+            />
+            <label htmlFor="cat-is-active" className="text-xs font-medium text-text-primary">
+              Active / Visible on Storefront
+            </label>
+          </div>
+
           <div className="pt-3 border-t border-border flex justify-end gap-2">
             <Button
               type="button"
@@ -267,9 +388,9 @@ export default function AdminCategoriesPage() {
               type="submit"
               variant="primary"
               size="sm"
-              isLoading={createCategoryMutation.isPending}
+              isLoading={createCategoryMutation.isPending || updateCategoryMutation.isPending}
             >
-              Create Category
+              {editingCategory ? 'Save Changes' : 'Create Category'}
             </Button>
           </div>
         </form>

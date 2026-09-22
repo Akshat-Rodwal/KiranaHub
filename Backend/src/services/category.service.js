@@ -1,21 +1,38 @@
+import mongoose from 'mongoose';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from '../constants/httpStatus.js';
+import categorySeedData from '../seeders/data/categories.js';
 
 const toCategoryDTO = (category, productCount) => ({
+  _id: category._id ? String(category._id) : undefined,
   id: category.slug,
   slug: category.slug,
   name: category.name,
-  description: category.description,
-  image: category.image,
-  icon: category.icon,
-  isActive: category.isActive,
-  sortOrder: category.sortOrder,
+  description: category.description || '',
+  image: category.image || '',
+  icon: category.icon || '',
+  isActive: category.isActive !== false,
+  sortOrder: category.sortOrder || 0,
+  itemCount: productCount ?? category.productCount ?? 0,
   productCount: productCount ?? category.productCount ?? 0,
+  createdAt: category.createdAt,
+  updatedAt: category.updatedAt,
 });
 
+/**
+ * Ensures categories exist in MongoDB. If collection is empty, auto-seeds default categories.
+ */
+export const ensureDefaultCategories = async () => {
+  const count = await Category.countDocuments();
+  if (count === 0) {
+    await Category.insertMany(categorySeedData);
+  }
+};
+
 const getCategoryList = async ({ includeInactive = false } = {}) => {
+  await ensureDefaultCategories();
   const matchStage = includeInactive ? {} : { isActive: true };
 
   const categories = await Category.aggregate([
@@ -51,7 +68,12 @@ const getCategoryList = async ({ includeInactive = false } = {}) => {
 };
 
 const getCategoryBySlug = async (slug) => {
-  const category = await Category.findOne({ slug, isActive: true }).lean();
+  await ensureDefaultCategories();
+  const query = mongoose.isValidObjectId(slug)
+    ? { $or: [{ _id: slug }, { slug }] }
+    : { slug };
+
+  const category = await Category.findOne(query).lean();
   if (!category) {
     throw new ApiError(httpStatus.NOT_FOUND, `Category '${slug}' not found`);
   }
@@ -63,9 +85,12 @@ const getCategoryBySlug = async (slug) => {
 };
 
 const resolveCategoryId = async (slug) => {
-  const category = await Category.findOne({ slug, isActive: true })
-    .select('_id')
-    .lean();
+  await ensureDefaultCategories();
+  const query = mongoose.isValidObjectId(slug)
+    ? { $or: [{ _id: slug }, { slug }] }
+    : { slug };
+
+  const category = await Category.findOne(query).select('_id').lean();
   if (!category) {
     throw new ApiError(httpStatus.NOT_FOUND, `Category '${slug}' not found`);
   }
@@ -77,15 +102,19 @@ const createCategory = async (data) => {
   return toCategoryDTO(category, 0);
 };
 
-const updateCategory = async (slug, data) => {
+const updateCategory = async (idOrSlug, data) => {
+  const query = mongoose.isValidObjectId(idOrSlug)
+    ? { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] }
+    : { slug: idOrSlug };
+
   const category = await Category.findOneAndUpdate(
-    { slug, isActive: true },
+    query,
     { $set: data },
-    { new: true }
+    { new: true, runValidators: true }
   );
 
   if (!category) {
-    throw new ApiError(httpStatus.NOT_FOUND, `Category '${slug}' not found`);
+    throw new ApiError(httpStatus.NOT_FOUND, `Category '${idOrSlug}' not found`);
   }
 
   const productCount = await Product.countDocuments({
@@ -96,15 +125,33 @@ const updateCategory = async (slug, data) => {
   return toCategoryDTO(category, productCount);
 };
 
-const deactivateCategory = async (slug) => {
+const deleteCategory = async (idOrSlug) => {
+  const query = mongoose.isValidObjectId(idOrSlug)
+    ? { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] }
+    : { slug: idOrSlug };
+
+  const category = await Category.findOneAndDelete(query);
+
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, `Category '${idOrSlug}' not found`);
+  }
+
+  return { message: 'Category deleted successfully', id: category._id, slug: category.slug };
+};
+
+const deactivateCategory = async (idOrSlug) => {
+  const query = mongoose.isValidObjectId(idOrSlug)
+    ? { $or: [{ _id: idOrSlug }, { slug: idOrSlug }] }
+    : { slug: idOrSlug };
+
   const category = await Category.findOneAndUpdate(
-    { slug, isActive: true },
+    query,
     { $set: { isActive: false } },
     { new: true }
   );
 
   if (!category) {
-    throw new ApiError(httpStatus.NOT_FOUND, `Category '${slug}' not found`);
+    throw new ApiError(httpStatus.NOT_FOUND, `Category '${idOrSlug}' not found`);
   }
 
   return { message: 'Category deactivated successfully' };
@@ -117,6 +164,7 @@ export {
   resolveCategoryId,
   createCategory,
   updateCategory,
+  deleteCategory,
   deactivateCategory,
 };
 
@@ -126,5 +174,7 @@ export default {
   resolveId: resolveCategoryId,
   create: createCategory,
   update: updateCategory,
-  remove: deactivateCategory,
+  delete: deleteCategory,
+  remove: deleteCategory,
+  deactivate: deactivateCategory,
 };
