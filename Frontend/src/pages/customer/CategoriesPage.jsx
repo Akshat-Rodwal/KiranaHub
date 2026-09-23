@@ -56,6 +56,7 @@ export default function CategoriesPage() {
                 key={category._id || category.slug}
                 slug={category.slug}
                 name={category.name}
+                icon={category.icon}
                 image={category.image}
                 count={category.itemCount || category.productCount}
                 showCount={true}

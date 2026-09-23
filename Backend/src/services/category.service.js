@@ -24,25 +24,16 @@ const toCategoryDTO = (category, productCount) => ({
   updatedAt: category.updatedAt,
 });
 
+import seedCategories from '../seeders/seedCategories.js';
+
 /**
- * Ensures categories exist in MongoDB. If collection is empty, auto-seeds default 13+ categories.
+ * Ensures categories exist in MongoDB. If collection is empty, auto-seeds default 15 categories.
  * If fewer than default categories exist, seeds the missing ones.
  */
 export const ensureDefaultCategories = async () => {
   const count = await Category.countDocuments();
-  if (count === 0) {
-    await Category.insertMany(categorySeedData);
-    return;
-  }
-
-  // Seed missing categories if fewer than seed data
-  if (count < categorySeedData.length) {
-    for (const cat of categorySeedData) {
-      const exists = await Category.findOne({ slug: cat.slug });
-      if (!exists) {
-        await Category.create(cat);
-      }
-    }
+  if (count === 0 || count < categorySeedData.length) {
+    await seedCategories();
   }
 };
 
@@ -82,11 +73,23 @@ const getCategoryList = async ({ includeInactive = false } = {}) => {
   return categories.map((category) => toCategoryDTO(category));
 };
 
+const BACKEND_ALIAS_MAP = {
+  staples: 'atta-rice-dal',
+  'dairy-eggs-bread': 'dairy-bread-eggs',
+  'spices-masala': 'masala-oil-more',
+  snacks: 'snacks-munchies',
+  beverages: 'cold-drinks-juices',
+  'breakfast-instant': 'instant-frozen-food',
+  'sweet-tooth': 'bakery-biscuits',
+  'home-care': 'cleaning-essentials',
+};
+
 const getCategoryBySlug = async (slug) => {
   await ensureDefaultCategories();
+  const canonicalSlug = BACKEND_ALIAS_MAP[slug] || slug;
   const query = mongoose.isValidObjectId(slug)
-    ? { $or: [{ _id: slug }, { slug }] }
-    : { slug };
+    ? { $or: [{ _id: slug }, { slug }, { slug: canonicalSlug }] }
+    : { $or: [{ slug }, { slug: canonicalSlug }] };
 
   const category = await Category.findOne(query).lean();
   if (!category) {
@@ -101,9 +104,10 @@ const getCategoryBySlug = async (slug) => {
 
 const resolveCategoryId = async (slug) => {
   await ensureDefaultCategories();
+  const canonicalSlug = BACKEND_ALIAS_MAP[slug] || slug;
   const query = mongoose.isValidObjectId(slug)
-    ? { $or: [{ _id: slug }, { slug }] }
-    : { slug };
+    ? { $or: [{ _id: slug }, { slug }, { slug: canonicalSlug }] }
+    : { $or: [{ slug }, { slug: canonicalSlug }] };
 
   const category = await Category.findOne(query).select('_id').lean();
   if (!category) {

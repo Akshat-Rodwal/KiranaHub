@@ -40,11 +40,14 @@ export default function AdminCategoriesPage() {
     staleTime: 60 * 1000,
   });
 
-  const categories =
+  const raw =
     categoriesRes?.data?.categories ||
+    categoriesRes?.categories ||
     categoriesRes?.data?.items ||
     categoriesRes?.data ||
-    (Array.isArray(categoriesRes) ? categoriesRes : []);
+    categoriesRes ||
+    [];
+  const categories = Array.isArray(raw) ? raw : [];
 
   const createCategoryMutation = useMutation({
     mutationFn: (payload) => adminService.createCategory(payload),
@@ -154,6 +157,7 @@ export default function AdminCategoriesPage() {
       slug: formData.slug.trim(),
       description: formData.description.trim(),
       image: formData.image.trim(),
+      icon: resolveCategory3DIcon(formData.name, formData.slug, formData.image),
       isActive: formData.isActive,
     };
 
@@ -190,7 +194,10 @@ export default function AdminCategoriesPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+              refetch();
+            }}
             isLoading={isFetching}
             leftIcon={<IconRefresh className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />}
           >

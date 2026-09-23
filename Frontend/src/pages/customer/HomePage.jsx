@@ -9,7 +9,7 @@ import { useProducts } from '../../hooks/useProducts.js';
 
 export default function HomePage() {
   const flashDealsQuery = useProducts({ flashDeal: true, limit: 6 });
-  const staplesQuery = useProducts({ category: 'staples', limit: 6 });
+  const staplesQuery = useProducts({ category: 'atta-rice-dal', limit: 6 });
 
   return (
     <div className="bg-[#f7f9f7] min-h-screen">
@@ -45,7 +45,7 @@ export default function HomePage() {
         isLoading={staplesQuery.isLoading}
         isError={staplesQuery.isError}
         onRetry={staplesQuery.refetch}
-        to={`${ROUTES.PRODUCTS}?category=staples`}
+        to={`${ROUTES.PRODUCTS}?category=atta-rice-dal`}
         viewAllLabel="View All →"
         dense
       />

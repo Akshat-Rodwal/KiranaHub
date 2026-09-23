@@ -68,6 +68,7 @@ export default function CategorySection() {
                   key={category._id || category.slug}
                   slug={category.slug}
                   name={category.name}
+                  icon={category.icon}
                   image={category.image}
                   count={category.itemCount || category.productCount}
                   to={ROUTES.CATEGORY.replace(':slug', category.slug)}
@@ -82,6 +83,7 @@ export default function CategorySection() {
                   key={category._id || category.slug}
                   slug={category.slug}
                   name={category.name}
+                  icon={category.icon}
                   image={category.image}
                   count={category.itemCount || category.productCount}
                   to={ROUTES.CATEGORY.replace(':slug', category.slug)}

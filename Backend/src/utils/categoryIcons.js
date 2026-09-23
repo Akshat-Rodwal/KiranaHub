@@ -4,13 +4,15 @@ export const CATEGORY_KEYWORD_3D_MAP = [
   { keywords: ['drink', 'juice', 'beverage', 'soda', 'cola', 'cold drink', 'water', 'energy drink', 'pepsi', 'coke', 'tea', 'coffee'], icon: 'https://img.icons8.com/plasticine/200/soda-cup.png' },
   { keywords: ['fruit', 'vegetable', 'sabzi', 'fresh', 'farm', 'produce', 'apple', 'mango', 'banana', 'tomato', 'potato', 'onion'], icon: 'https://img.icons8.com/plasticine/200/vegetarian-food.png' },
   { keywords: ['milk', 'dairy', 'egg', 'bread', 'butter', 'cheese', 'paneer', 'curd', 'dahi', 'yogurt', 'yoghurt', 'cream', 'lassi'], icon: 'https://img.icons8.com/plasticine/200/milk-bottle.png' },
+  { keywords: ['atta', 'rice', 'dal', 'flour', 'staple', 'grain', 'wheat', 'oil', 'ghee', 'pulse', 'sooji', 'maida', 'besan'], icon: 'https://img.icons8.com/plasticine/200/wheat.png' },
+  { keywords: ['masala', 'spice', 'mirch', 'haldi', 'salt', 'sugar', 'seasoning', 'jeera', 'coriander', 'clove', 'cardamom'], icon: 'https://img.icons8.com/plasticine/200/ingredients.png' },
   { keywords: ['noodle', 'maggi', 'instant', 'breakfast', 'cereal', 'oats', 'pasta', 'soup', 'muesli', 'cornflakes'], icon: 'https://img.icons8.com/plasticine/200/noodles.png' },
   { keywords: ['pharma', 'medicine', 'health', 'wellness', 'first aid', 'pill', 'tablet', 'bandage', 'vitamin', 'balm'], icon: 'https://img.icons8.com/plasticine/200/pill.png' },
   { keywords: ['clean', 'wash', 'detergent', 'household', 'soap', 'spray', 'mop', 'wipe', 'dishwash', 'harpic', 'surf'], icon: 'https://img.icons8.com/plasticine/200/soap.png' },
-  { keywords: ['personal', 'skin', 'beauty', 'hair', 'shampoo', 'cream', 'face', 'cosmetic', 'lotion', 'body wash', 'deodorant'], icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965300.png' },
+  { keywords: ['personal', 'skin', 'beauty', 'hair', 'shampoo', 'cream', 'face', 'cosmetic', 'lotion', 'body wash', 'deodorant'], icon: 'https://img.icons8.com/plasticine/200/makeup.png' },
   { keywords: ['baby', 'diaper', 'infant', 'child', 'feeder', 'cerelac', 'pampers'], icon: 'https://img.icons8.com/plasticine/200/baby-bottle.png' },
   { keywords: ['pet', 'dog', 'cat', 'puppy', 'kitten', 'pedigree', 'whiskas', 'pet food'], icon: 'https://img.icons8.com/plasticine/200/dog.png' },
-  { keywords: ['meat', 'chicken', 'fish', 'mutton', 'seafood', 'prawn', 'poultry'], icon: 'https://img.icons8.com/plasticine/200/steak.png' },
+  { keywords: ['meat', 'chicken', 'fish', 'mutton', 'seafood', 'prawn', 'poultry'], icon: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png' },
   { keywords: ['paan', 'mouth', 'supari', 'freshener', 'gutkha', 'elaichi', 'churan'], icon: 'https://cdn-icons-png.flaticon.com/512/2909/2909894.png' },
 ];
 
@@ -35,4 +37,9 @@ export const resolveCategory3DIcon = (name = '', slug = '', fallbackIcon = null)
     }
   }
   return 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
+};
+
+export default {
+  CATEGORY_KEYWORD_3D_MAP,
+  resolveCategory3DIcon,
 };
