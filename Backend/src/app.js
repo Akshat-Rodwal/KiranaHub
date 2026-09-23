@@ -15,6 +15,8 @@ import orderRouter from './routes/order.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import settingsRouter from './routes/settings.routes.js';
 import bannerRouter from './routes/banner.routes.js';
+import paymentRouter from './routes/payment.routes.js';
+import bundleRouter from './routes/bundle.routes.js';
 import {
   notFoundHandler,
   globalErrorHandler,
@@ -114,6 +116,8 @@ app.use('/api/orders', orderRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/banners', bannerRouter);
+app.use('/api/payments', paymentRouter);
+app.use('/api/bundles', bundleRouter);
 
 app.use(notFoundHandler);
 

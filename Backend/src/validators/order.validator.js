@@ -70,7 +70,7 @@ export const validateOrderCreate = (req, _res, next) => {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Valid 6-digit postal pincode is required');
     }
 
-    const allowedPaymentMethods = ['COD', 'UPI', 'CARD', 'WALLET'];
+    const allowedPaymentMethods = ['COD', 'UPI', 'CARD', 'WALLET', 'ONLINE'];
     const selectedPayment = (paymentMethod || 'COD').toUpperCase();
     if (!allowedPaymentMethods.includes(selectedPayment)) {
       throw new ApiError(
@@ -93,6 +93,7 @@ export const validateOrderCreate = (req, _res, next) => {
         pincode: pincode.trim(),
       },
       paymentMethod: selectedPayment,
+      cartToken: req.body?.cartToken || null,
     };
 
     next();

@@ -24,6 +24,7 @@ export default function ProductCard({
   rating = 0,
   reviewCount: _reviewCount = 0,
   stock = 10,
+  reservedStock = 0,
   badges: _badges = [],
   isNew: _isNew = false,
   isInWishlist = false,
@@ -38,8 +39,9 @@ export default function ProductCard({
   const effectiveSellingPrice = sellingPrice ?? price ?? 0;
   const effectiveOriginalPrice = originalPrice ?? mrp ?? effectiveSellingPrice;
   const discount = calculateDiscount(effectiveOriginalPrice, effectiveSellingPrice);
-  const outOfStock = stock <= 0;
-  const lowStock = stock > 0 && stock <= 5;
+  const availableStock = Math.max(0, stock - (reservedStock || 0));
+  const outOfStock = availableStock <= 0;
+  const lowStock = availableStock > 0 && availableStock <= 5;
   const categoryName = typeof category === 'object' ? category?.name : category;
 
   const DEFAULT_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80';
@@ -253,9 +255,9 @@ export default function ProductCard({
 
         {/* Low Stock Indicator */}
         {lowStock && (
-          <p className="text-[10px] font-semibold text-amber-600 flex items-center gap-1 mt-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            Only {stock} left
+          <p className="text-[10px] font-bold text-rose-600 flex items-center gap-1 mt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            ⚡ Only {availableStock} left in store!
           </p>
         )}
       </div>

@@ -8,6 +8,7 @@ import Badge from '../../components/common/Badge.jsx';
 import { toast } from '../../components/common/Toast.jsx';
 import apiClient from '../../services/apiClient.js';
 import orderService from '../../services/order.service.js';
+import LiveOrderTrackerModal from '../../components/order/LiveOrderTrackerModal.jsx';
 import { ROUTES } from '../../constants/index.js';
 import { formatPrice } from '../../utils/index.js';
 import {
@@ -146,6 +147,7 @@ export default function OrdersPage() {
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cancellingId, setCancellingId] = useState(null);
+  const [trackingOrder, setTrackingOrder] = useState(null);
 
   const fetchOrders = useCallback(async (targetPage = 1) => {
     try {
@@ -555,6 +557,17 @@ export default function OrdersPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
+                            {/* Track Live Option for active orders */}
+                            {['PENDING', 'CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes((order?.orderStatus || '').toUpperCase()) && (
+                              <button
+                                type="button"
+                                onClick={() => setTrackingOrder(order)}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <span>🛵 Track Live</span>
+                              </button>
+                            )}
+
                             {/* Cancellation option strictly for PENDING orders */}
                             {isPending && (
                               <button
@@ -773,6 +786,13 @@ export default function OrdersPage() {
           )}
         </div>
       </Container>
+
+      {/* Live Order Tracker Modal */}
+      <LiveOrderTrackerModal
+        isOpen={Boolean(trackingOrder)}
+        onClose={() => setTrackingOrder(null)}
+        order={trackingOrder}
+      />
     </div>
   );
 }

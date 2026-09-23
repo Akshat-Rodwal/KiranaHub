@@ -7,6 +7,9 @@ import orderRouter from './order.routes.js';
 import adminRouter from './admin.routes.js';
 import settingsRouter from './settings.routes.js';
 import bannerRouter from './banner.routes.js';
+import paymentRouter from './payment.routes.js';
+import cartRouter from './cart.routes.js';
+import bundleRouter from './bundle.routes.js';
 
 const router = express.Router();
 
@@ -22,6 +25,14 @@ router.get('/', (req, res) => {
       products: 'GET /api/v1/products',
       productBySlug: 'GET /api/v1/products/:slug',
       banners: 'GET /api/v1/banners',
+      payments: {
+        createOrder: 'POST /api/v1/payments/create-order',
+        verify: 'POST /api/v1/payments/verify',
+      },
+      cart: {
+        reserveStock: 'POST /api/v1/cart/reserve-stock',
+        releaseStock: 'POST /api/v1/cart/release-stock',
+      },
       auth: {
         register: 'POST /api/v1/auth/register',
         login: 'POST /api/v1/auth/login',
@@ -41,5 +52,8 @@ router.use('/orders', orderRouter);
 router.use('/admin', adminRouter);
 router.use('/settings', settingsRouter);
 router.use('/banners', bannerRouter);
+router.use('/payments', paymentRouter);
+router.use('/cart', cartRouter);
+router.use('/bundles', bundleRouter);
 
 export default router;

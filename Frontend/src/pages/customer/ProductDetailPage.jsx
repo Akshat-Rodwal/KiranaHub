@@ -218,9 +218,9 @@ export default function ProductDetailPage() {
                   <Badge variant="danger" size="sm">
                     Out of Stock
                   </Badge>
-                ) : product.stock <= 10 ? (
-                  <Badge variant="warning" size="sm">
-                    Only {product.stock} left in stock
+                ) : (product.stock - (product.reservedStock || 0)) <= 5 ? (
+                  <Badge variant="warning" size="sm" className="bg-rose-50 text-rose-700 border-rose-200 font-bold">
+                    ⚡ Only {Math.max(1, product.stock - (product.reservedStock || 0))} left in store!
                   </Badge>
                 ) : (
                   <Badge variant="success" size="sm">

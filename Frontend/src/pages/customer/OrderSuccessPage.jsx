@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -6,13 +7,14 @@ import Container from '../../components/common/Container.jsx';
 import Button from '../../components/common/Button.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
+import LiveOrderTrackerModal from '../../components/order/LiveOrderTrackerModal.jsx';
 import orderService from '../../services/order.service.js';
 import { ROUTES } from '../../constants/index.js';
 import { formatPrice } from '../../utils/index.js';
 
-
 export default function OrderSuccessPage() {
   const { orderId } = useParams();
+  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
 
   const { data: orderRes, isLoading } = useQuery({
     queryKey: ['order', orderId],
@@ -41,7 +43,7 @@ export default function OrderSuccessPage() {
           className="mx-auto max-w-xl text-center"
         >
           {/* Success Checkmark Badge */}
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-success-100 text-success-600 shadow-brand">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 shadow-brand">
             <motion.svg
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -61,15 +63,15 @@ export default function OrderSuccessPage() {
           </Badge>
 
           <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-text-primary mt-3">
-            Thank you for shopping local!
+            Thank you for shopping with KiranaHub!
           </h1>
           <p className="text-sm text-text-muted mt-2 max-w-md mx-auto">
             Your order has been received and our neighborhood Kirana team is already packing your fresh items.
           </p>
 
           {/* Delivery ETA Card */}
-          <div className="mt-8 rounded-3xl border border-border-light bg-surface p-6 shadow-sm text-left">
-            <div className="flex items-center justify-between pb-4 border-b border-border-light">
+          <div className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 shadow-xs text-left">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
               <div>
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Order Number
@@ -91,23 +93,23 @@ export default function OrderSuccessPage() {
             </div>
 
             {/* Estimated Time */}
-            <div className="flex items-center gap-3.5 my-4 p-3.5 rounded-2xl bg-brand-50/70 border border-brand-100">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white font-bold text-lg">
+            <div className="flex items-center gap-3.5 my-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-lg shadow-xs">
                 ⚡
               </div>
               <div>
-                <span className="font-bold text-sm text-text-primary">
-                  Estimated Delivery: {order?.expectedDeliveryTime || '20-30 mins'}
+                <span className="font-bold text-sm text-slate-900">
+                  Estimated Delivery: {order?.expectedDeliveryTime || '10-15 mins'}
                 </span>
-                <p className="text-xs text-brand-800 font-medium mt-0.5">
-                  Delivery partner will be assigned shortly
+                <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                  Live partner GPS dispatch ready • Follow your bag on the map
                 </p>
               </div>
             </div>
 
             {/* Address & Items Summary */}
             {order?.deliveryAddress && (
-              <div className="py-3 border-t border-border-light text-xs text-text-secondary">
+              <div className="py-3 border-t border-stone-100 text-xs text-text-secondary">
                 <span className="font-semibold text-text-primary block mb-1">
                   Delivering to:
                 </span>
@@ -122,9 +124,9 @@ export default function OrderSuccessPage() {
 
             {/* Pricing Total */}
             {order?.pricing && (
-              <div className="pt-3 border-t border-border-light flex items-center justify-between text-sm">
-                <span className="font-bold text-text-primary">Amount Paid / Payable:</span>
-                <span className="font-display font-extrabold text-brand-700 text-lg">
+              <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-sm">
+                <span className="font-bold text-text-primary">Total Paid:</span>
+                <span className="font-display font-extrabold text-emerald-700 text-lg">
                   {formatPrice(order.pricing.grandTotal)}
                 </span>
               </div>
@@ -133,18 +135,25 @@ export default function OrderSuccessPage() {
 
           {/* Action CTAs */}
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => setIsTrackerOpen(true)}
+              className="py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm tracking-wide shadow-brand hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>🛵 Track Live Delivery</span>
+            </button>
             <Button
               as={Link}
               to={ROUTES.ORDERS}
-              variant="primary"
+              variant="outline"
               size="lg"
             >
-              View My Orders
+              View All Orders
             </Button>
             <Button
               as={Link}
               to={ROUTES.HOME}
-              variant="outline"
+              variant="ghost"
               size="lg"
             >
               Continue Shopping
@@ -152,6 +161,13 @@ export default function OrderSuccessPage() {
           </div>
         </motion.div>
       </Container>
+
+      {/* Live Order Tracker Modal with Mapbox */}
+      <LiveOrderTrackerModal
+        isOpen={isTrackerOpen}
+        onClose={() => setIsTrackerOpen(false)}
+        order={order}
+      />
     </div>
   );
 }

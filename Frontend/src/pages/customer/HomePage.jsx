@@ -1,6 +1,7 @@
 import TopSingleBanner from '../../components/home/TopSingleBanner.jsx';
 import CategorySection from '../../components/home/CategorySection.jsx';
 import InstamartPromoCarousel from '../../components/home/InstamartPromoCarousel.jsx';
+import SmartCombosSection from '../../components/home/SmartCombosSection.jsx';
 import StoreInfoSection from '../../components/home/StoreInfoSection.jsx';
 import NewsletterSection from '../../components/home/NewsletterSection.jsx';
 import ProductSection from '../../components/product/ProductSection.jsx';
@@ -21,6 +22,9 @@ export default function HomePage() {
 
       {/* 3. Swiggy Instamart 3-Card Promo Carousel */}
       <InstamartPromoCarousel />
+
+      {/* 4. Smart Recipe & Daily Combos */}
+      <SmartCombosSection />
 
       {/* 4. Shelf A: Trending / Flash Deals */}
       <ProductSection

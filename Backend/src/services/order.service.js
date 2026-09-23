@@ -2,12 +2,14 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import StockReservation from '../models/StockReservation.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from '../constants/httpStatus.js';
 import { sendEmail } from '../config/emailConfig.js';
 import { getOrderConfirmationTemplate } from '../utils/emailTemplates.js';
+import { emitNewOrderAlert } from '../socket.js';
 
-const createOrder = async ({ userId, items, deliveryAddress, paymentMethod }) => {
+const createOrder = async ({ userId, items, deliveryAddress, paymentMethod, cartToken }) => {
   // Phase 1: Pre-validation & Stock Verification
   // We resolve all products and verify stock availability before making any database updates.
   const resolvedItems = [];
@@ -61,8 +63,16 @@ const createOrder = async ({ userId, items, deliveryAddress, paymentMethod }) =>
   // Once all items have been confirmed available, deduct stock atomically.
   for (const resolved of resolvedItems) {
     await Product.findByIdAndUpdate(resolved.productDoc._id, {
-      $inc: { stock: -resolved.quantity },
+      $inc: { stock: -resolved.quantity, reservedStock: -resolved.quantity },
     });
+  }
+
+  // Ensure reservedStock never drops below 0
+  await Product.updateMany({ reservedStock: { $lt: 0 } }, { $set: { reservedStock: 0 } });
+
+  // Delete active reservation for this cart session if exists
+  if (cartToken) {
+    await StockReservation.deleteMany({ cartToken });
   }
 
   // Phase 3: Server-side Pricing Computation
@@ -91,6 +101,9 @@ const createOrder = async ({ userId, items, deliveryAddress, paymentMethod }) =>
     orderStatus: 'PENDING',
     expectedDeliveryTime: '20-30 mins',
   });
+
+  // Emit real-time notification to Admin Operations channel
+  emitNewOrderAlert(order);
 
   // Phase 5: Asynchronous Order Confirmation Email (non-blocking)
   User.findById(userId)

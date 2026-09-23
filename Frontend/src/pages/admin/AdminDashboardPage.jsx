@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 
 import useAuthStore from '../../store/useAuthStore.js';
 import adminService from '../../services/admin.service.js';
+import { getSocket } from '../../services/socket.js';
+import { toast } from '../../components/common/Toast.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import LoadingSpinner from '../../components/common/LoadingSpinner.jsx';
@@ -28,6 +31,40 @@ const STATUS_BADGES = {
   CANCELLED: { variant: 'danger', label: 'Cancelled' },
 };
 
+const playAdminOrderChime = () => {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    
+    // Play dual high pitch chime (Instamart alert tone)
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc1.type = 'triangle';
+    osc2.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+    osc1.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+    osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc2.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12); // D6
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.start();
+    osc2.start();
+    osc1.stop(audioCtx.currentTime + 0.5);
+    osc2.stop(audioCtx.currentTime + 0.5);
+  } catch (err) {
+    console.warn('Unable to play audio alert:', err);
+  }
+};
+
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
 
@@ -43,6 +80,32 @@ export default function AdminDashboardPage() {
     refetchInterval: 10 * 1000,
     refetchOnWindowFocus: true,
   });
+
+  // Socket.io real-time listener for incoming orders
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit('join_admin');
+
+    const handleNewOrder = (newOrder) => {
+      playAdminOrderChime();
+      const orderId = (newOrder?._id || '').slice(-6).toUpperCase();
+      const customer = newOrder?.deliveryAddress?.receiverName || newOrder?.user?.name || 'Customer';
+      const amount = formatPrice(newOrder?.pricing?.grandTotal || 0);
+
+      toast.success(`⚡ New Order #${orderId} Received!`, {
+        description: `${customer} placed an order for ${amount}. Immediate dispatch required.`,
+        duration: 8000,
+      });
+
+      refetch();
+    };
+
+    socket.on('new_order', handleNewOrder);
+
+    return () => {
+      socket.off('new_order', handleNewOrder);
+    };
+  }, [refetch]);
 
   const analytics = analyticsRes?.data || analyticsRes || {};
 
@@ -100,6 +163,10 @@ export default function AdminDashboardPage() {
             <Badge variant="primary" size="sm" className="font-mono uppercase tracking-wider">
               Live Operations
             </Badge>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Socket Pulse Active
+            </span>
             <span className="text-xs text-text-muted">KiranaHub Store Control</span>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-text-primary">

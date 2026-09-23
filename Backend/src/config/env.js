@@ -39,6 +39,9 @@ const config = {
     brevoSenderEmail: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'modiakshat130@gmail.com',
     // Google OAuth Settings
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+    // Razorpay Gateway Settings
+    razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+    razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || '',
 };
 
 export default config;

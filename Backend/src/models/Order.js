@@ -151,7 +151,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['COD', 'UPI', 'CARD', 'WALLET'],
+      enum: ['COD', 'UPI', 'CARD', 'WALLET', 'ONLINE'],
       default: 'COD',
       required: true,
     },
@@ -178,6 +178,37 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: '20-30 mins',
       trim: true,
+    },
+    razorpayOrderId: {
+      type: String,
+      default: '',
+      index: true,
+      sparse: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: '',
+    },
+    razorpaySignature: {
+      type: String,
+      default: '',
+    },
+    deliveryPartner: {
+      name: { type: String, default: 'Vikram Singh' },
+      phone: { type: String, default: '+91 98765 43210' },
+      fleetNumber: { type: String, default: 'KiranaHub Fleet #402' },
+      rating: { type: Number, default: 4.9 },
+      vehicle: { type: String, default: 'Delivery Scooter (DL-08-SK-4022)' },
+      vaccinated: { type: Boolean, default: true },
+      temperature: { type: String, default: '36.4°C' },
+    },
+    deliveryTip: {
+      type: Number,
+      default: 0,
+    },
+    deliveryInstructions: {
+      type: [String],
+      default: [],
     },
   },
   {

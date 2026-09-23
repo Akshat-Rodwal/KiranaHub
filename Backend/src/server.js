@@ -1,6 +1,8 @@
+import http from 'http';
 import app from './app.js';
 import config from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
+import { initSocket } from './socket.js';
 
 let server;
 
@@ -8,14 +10,18 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    server = app.listen(config.port, () => {
+    server = http.createServer(app);
+    initSocket(server);
+
+    server.listen(config.port, () => {
       const divider = '='.repeat(60);
       console.log(`\n${divider}`);
-      console.log('  🛒 Kirana & General Store - Backend Server');
+      console.log('  🛒 Kirana & General Store - Backend Server & Socket.io Pulse');
       console.log(divider);
       console.log(`  🚀 Status     : Running`);
       console.log(`  📍 Port       : ${config.port}`);
       console.log(`  🔗 URL        : http://localhost:${config.port}`);
+      console.log(`  ⚡ Real-Time  : Socket.io Initialized`);
       console.log(`  🌱 Environment: ${config.nodeEnv}`);
       console.log(`  🏥 Health     : http://localhost:${config.port}/api/v1/health`);
       console.log(divider);

@@ -5,6 +5,7 @@ import ApiError from '../utils/ApiError.js';
 import httpStatus from '../constants/httpStatus.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import { emitOrderStatusUpdate } from '../socket.js';
 
 // Allowed State Transitions (Forward flow & cancellation)
 const ALLOWED_STATUS_TRANSITIONS = {
@@ -224,6 +225,14 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   order.orderStatus = nextStatus;
   await order.save();
+
+  // Real-time Socket.io dispatch to customer's live tracking room
+  emitOrderStatusUpdate(order._id, {
+    status: nextStatus,
+    paymentStatus: order.paymentStatus,
+    deliveryPartner: order.deliveryPartner,
+    updatedAt: order.updatedAt,
+  });
 
   return res.status(httpStatus.OK).json(
     new ApiResponse(httpStatus.OK, `Order status updated to '${nextStatus}'`, order),
