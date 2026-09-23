@@ -42,7 +42,8 @@ export default function CategoryCard({
           className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300 pointer-events-none select-none"
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
+            e.currentTarget.src =
+              'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
           }}
         />
       );
@@ -65,10 +66,10 @@ export default function CategoryCard({
 
   const content = (
     <>
-      {/* KiranaHub Signature Soft Mint / Emerald Circular Container */}
+      {/* KiranaHub Ultra-Soft Airy Pastel Circular Container */}
       <div
         className={classNames(
-          'w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-b from-[#ebfaf2] to-[#dcf6e7] border border-[#bbf0d2] p-3 sm:p-3.5 flex items-center justify-center shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-[#d0f3df] group-hover:border-[#8be2b0] group-hover:shadow-md group-hover:shadow-emerald-900/10'
+          'w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-b from-white via-[#f8fbf9] to-[#edf6f2]/80 border border-emerald-100/90 p-2.5 sm:p-3 flex items-center justify-center shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-[#f1f8f4] group-hover:border-emerald-300/80 group-hover:shadow-md group-hover:shadow-emerald-950/5'
         )}
       >
         {renderIconContent()}
@@ -76,7 +77,7 @@ export default function CategoryCard({
 
       {showLabel && (
         <div className="mt-1 text-center min-w-0 w-full px-0.5">
-          <p className="text-xs sm:text-[13px] font-bold text-slate-800 text-center mt-2 group-hover:text-[#0c831f] transition-colors line-clamp-1">
+          <p className="text-xs sm:text-[13px] font-bold text-slate-800 text-center mt-2 group-hover:text-emerald-700 transition-colors line-clamp-1">
             {name}
           </p>
           {showCount && typeof count === 'number' && (

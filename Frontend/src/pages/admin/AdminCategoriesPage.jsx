@@ -243,7 +243,7 @@ export default function AdminCategoriesPage() {
                   <tr key={cat._id || cat.slug} className="hover:bg-surface-soft/40 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#ebfaf2] border border-[#bbf0d2] flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-b from-white to-[#edf6f2]/80 border border-emerald-100/90 flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
                           <img
                             src={resolveCategory3DIcon(
                               cat.name,
@@ -254,7 +254,8 @@ export default function AdminCategoriesPage() {
                             className="h-7 w-7 object-contain"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
-                              e.currentTarget.src = 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
+                              e.currentTarget.src =
+                                'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
                             }}
                           />
                         </div>
@@ -359,21 +360,22 @@ export default function AdminCategoriesPage() {
           </div>
 
           {/* Smart 3D Icon Auto-Detection Live Preview */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebfaf2] border border-[#bbf0d2]">
-            <div className="w-12 h-12 rounded-full bg-white border border-[#bbf0d2] flex items-center justify-center shadow-xs shrink-0 p-1">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-b from-white to-[#f4faf6] border border-emerald-100/90 shadow-2xs">
+            <div className="w-12 h-12 rounded-full bg-white border border-emerald-100 flex items-center justify-center shadow-xs shrink-0 p-1.5">
               <img
                 src={resolveCategory3DIcon(formData.name, formData.slug, formData.image)}
                 alt="Preview"
                 className="w-8 h-8 object-contain"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://img.icons8.com/plasticine/200/shopping-basket-2.png';
+                  e.currentTarget.src =
+                    'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
                 }}
               />
             </div>
             <div>
-              <p className="text-xs font-bold text-emerald-950">Smart 3D Icon Auto-Detection</p>
-              <p className="text-[11px] text-emerald-700">
+              <p className="text-xs font-bold text-slate-800">Smart 3D Icon Auto-Detection</p>
+              <p className="text-[11px] text-slate-500">
                 {formData.image?.trim()
                   ? 'Using custom image provided above'
                   : 'Auto-detected based on category name/slug keywords. Leave blank to keep 3D icon.'}
