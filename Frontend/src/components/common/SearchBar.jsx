@@ -360,10 +360,10 @@ const SearchBar = forwardRef(
                     e.preventDefault();
                     handleSubmit(e);
                   }}
-                  className="w-full py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center justify-center gap-1.5 transition-colors cursor-pointer group"
                 >
                   <span>See all results for &ldquo;{finalValue}&rdquo;</span>
-                  <span>→</span>
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
                 </button>
               </div>
             </motion.div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 import Container from '../common/Container.jsx';
 import CategoryCard from '../ui/CategoryCard.jsx';
 import { ROUTES } from '../../constants/index.js';
@@ -47,9 +48,10 @@ export default function CategorySection() {
           </h2>
           <Link
             to={ROUTES.CATEGORIES}
-            className="text-xs sm:text-sm font-extrabold text-[#0c831f] hover:text-[#0a6d1a] transition-colors"
+            className="text-xs sm:text-sm font-extrabold text-[#0c831f] hover:text-[#0a6d1a] transition-colors inline-flex items-center gap-0.5 group"
           >
-            see all →
+            <span>see all</span>
+            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
           </Link>
         </div>
 

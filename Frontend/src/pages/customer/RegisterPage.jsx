@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import useAuthStore from '../../store/useAuthStore.js';
 import authService from '../../services/auth.service.js';
@@ -544,9 +545,10 @@ export default function RegisterPage() {
                         setOtpError('');
                       }}
                       disabled={isVerifying}
-                      className="w-full text-center text-xs font-semibold text-text-muted hover:text-text-primary py-2 transition-colors"
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-text-muted hover:text-text-primary py-2 transition-colors group cursor-pointer"
                     >
-                      ← Edit registration details
+                      <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" strokeWidth={2} />
+                      <span>Edit registration details</span>
                     </button>
                   </div>
                 </motion.div>

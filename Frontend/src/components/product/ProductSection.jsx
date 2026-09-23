@@ -14,12 +14,14 @@ export default function ProductSection({
   countdown,
   products = [],
   to,
-  viewAllLabel = 'See All →',
+  viewAllLabel = 'See All',
   dense = false,
   isLoading = false,
   isError = false,
   onRetry,
 }) {
+  const labelText = typeof viewAllLabel === 'string' ? viewAllLabel.replace(/[\s→\-]+$/, '').trim() : viewAllLabel;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
@@ -57,7 +59,7 @@ export default function ProductSection({
               to={to}
               className="group flex shrink-0 items-center gap-1.5 rounded-full border border-stone-200/90 bg-white px-3.5 py-1.5 text-xs font-extrabold text-emerald-800 shadow-2xs transition-all hover:border-emerald-600 hover:text-emerald-700 hover:shadow-xs"
             >
-              <span>{viewAllLabel}</span>
+              <span>{labelText}</span>
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
             </Link>
           )}

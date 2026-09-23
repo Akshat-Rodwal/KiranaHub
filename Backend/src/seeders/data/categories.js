@@ -6,7 +6,7 @@ const categories = [
     slug: 'fruits-vegetables',
     description: 'Farm-fresh fruits, vegetables, and greens delivered daily.',
     color: ['#16a34a', '#4ade80'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Green%20salad/3D/green_salad_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/1625/1625048.png',
     sortOrder: 1,
   },
   {
@@ -14,7 +14,7 @@ const categories = [
     slug: 'dairy-bread-eggs',
     description: 'Fresh milk, curd, paneer, eggs, bread and bakery essentials.',
     color: ['#0891b2', '#67e8f9'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Glass%20of%20milk/3D/glass_of_milk_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/3050/3050158.png',
     sortOrder: 2,
   },
   {
@@ -22,7 +22,7 @@ const categories = [
     slug: 'atta-rice-dal',
     description: 'Staples like farm-fresh atta, basmati rice, dal and unpolished pulses.',
     color: ['#d97706', '#fbbf24'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Sheaf%20of%20rice/3D/sheaf_of_rice_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2821/2821805.png',
     sortOrder: 3,
   },
   {
@@ -30,7 +30,7 @@ const categories = [
     slug: 'masala-oil-more',
     description: 'Whole spices, ground aromatic masalas and pure cooking oils.',
     color: ['#dc2626', '#f87171'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Hot%20pepper/3D/hot_pepper_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2771/2771401.png',
     sortOrder: 4,
   },
   {
@@ -38,7 +38,7 @@ const categories = [
     slug: 'snacks-munchies',
     description: 'Crisps, namkeen, wafers, biscuits and tea-time snacks.',
     color: ['#ea580c', '#fdba74'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Popcorn/3D/popcorn_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2553/2553691.png',
     sortOrder: 5,
   },
   {
@@ -46,7 +46,7 @@ const categories = [
     slug: 'cold-drinks-juices',
     description: 'Chilled soft drinks, fresh fruit juices, energy drinks and sodas.',
     color: ['#7c3aed', '#c4b5fd'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Beverage%20box/3D/beverage_box_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2405/2405479.png',
     sortOrder: 6,
   },
   {
@@ -54,7 +54,7 @@ const categories = [
     slug: 'instant-frozen-food',
     description: 'Quick noodles, oats, cereals, pasta and instant meals.',
     color: ['#0d9488', '#5eead4'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Steaming%20bowl/3D/steaming_bowl_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/3480/3480823.png',
     sortOrder: 7,
   },
   {
@@ -62,7 +62,7 @@ const categories = [
     slug: 'bakery-biscuits',
     description: 'Chocolates, fresh cookies, mithai, cakes and dessert delights.',
     color: ['#e11d48', '#fda4af'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Cookie/3D/cookie_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/992/992747.png',
     sortOrder: 8,
   },
   {
@@ -70,7 +70,7 @@ const categories = [
     slug: 'personal-care',
     description: 'Skincare, lotions, body wash, hair care and hygiene products.',
     color: ['#db2777', '#f9a8d4'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Lotion%20bottle/3D/lotion_bottle_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965300.png',
     sortOrder: 9,
   },
   {
@@ -78,7 +78,7 @@ const categories = [
     slug: 'cleaning-essentials',
     description: 'Surface cleaners, dishwash bars, detergents and home sprays.',
     color: ['#2563eb', '#93c5fd'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Sponge/3D/sponge_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/995/995053.png',
     sortOrder: 10,
   },
   {
@@ -86,7 +86,7 @@ const categories = [
     slug: 'baby-care',
     description: 'Gentle baby food, diapers, wipes, feeders and lotions.',
     color: ['#059669', '#6ee7b7'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Baby%20bottle/3D/baby_bottle_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2829/2829824.png',
     sortOrder: 11,
   },
   {
@@ -94,7 +94,7 @@ const categories = [
     slug: 'pharma-wellness',
     description: 'First aid, pain relief, vitamins, health supplements and wellness.',
     color: ['#0284c7', '#7dd3fc'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Pill/3D/pill_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/883/883407.png',
     sortOrder: 12,
   },
   {
@@ -102,7 +102,7 @@ const categories = [
     slug: 'pet-care',
     description: 'Nutritious dog food, cat treats, pet grooming and toys.',
     color: ['#f59e0b', '#fde68a'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Dog%20face/3D/dog_face_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
     sortOrder: 13,
   },
   {
@@ -110,7 +110,7 @@ const categories = [
     slug: 'meat-fish',
     description: 'Fresh poultry, tender mutton, sea fish and farm eggs.',
     color: ['#b91c1c', '#fca5a5'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Poultry%20leg/3D/poultry_leg_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png',
     sortOrder: 14,
   },
   {
@@ -118,7 +118,7 @@ const categories = [
     slug: 'paan-corner',
     description: 'Mouth fresheners, mints, supari, and herbal digestive drops.',
     color: ['#15803d', '#86efac'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Herb/3D/herb_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2909/2909894.png',
     sortOrder: 15,
   },
   {
@@ -126,7 +126,7 @@ const categories = [
     slug: 'toys-games',
     description: 'Kids toys, board games, plush teddy bears and educational sets.',
     color: ['#9333ea', '#c084fc'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Teddy%20bear/3D/teddy_bear_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/3082/3082060.png',
     sortOrder: 16,
   },
 ];

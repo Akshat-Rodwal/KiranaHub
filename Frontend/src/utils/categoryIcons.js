@@ -1,89 +1,97 @@
 export const CATEGORY_KEYWORD_3D_MAP = [
   // Toys & Games
   {
-    keywords: ['toy', 'game', 'kids', 'doll', 'action figure', 'teddy', 'puzzle', 'play'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Teddy%20bear/3D/teddy_bear_3d.png',
+    keywords: ['toy', 'game', 'kids', 'doll', 'action figure', 'puzzle', 'play', 'board game', 'teddy'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/3082/3082060.png', // Clean 2D flat colorful toy blocks / car
   },
-  // Vegetables, Fruits & Farm Grocery
+  // Fruits, Vegetables & Farm Grocery
   {
-    keywords: ['vegetable', 'fruit', 'sabzi', 'grocery', 'farm', 'fresh produce', 'produce', 'greens', 'salad'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Green%20salad/3D/green_salad_3d.png',
+    keywords: ['vegetable', 'fruit', 'sabzi', 'grocery', 'farm', 'fresh produce', 'greens', 'salad', 'apple', 'banana', 'mango', 'tomato', 'produce'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/1625/1625048.png', // Clean 2D fresh vegetable basket
   },
-  // Dairy, Milk, Eggs & Bread
+  // Dairy, Milk, Bread & Eggs
   {
     keywords: ['dairy', 'milk', 'egg', 'bread', 'butter', 'cheese', 'paneer', 'dahi', 'curd', 'yogurt'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Glass%20of%20milk/3D/glass_of_milk_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/3050/3050158.png', // Clean 2D milk carton, bread & cheese
   },
-  // Atta, Rice, Dal & Grains
+  // Atta, Rice, Dal & Staples
   {
-    keywords: ['atta', 'rice', 'dal', 'flour', 'grain', 'wheat', 'chawal', 'pulses', 'staple'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Sheaf%20of%20rice/3D/sheaf_of_rice_3d.png',
+    keywords: ['atta', 'rice', 'dal', 'flour', 'grain', 'wheat', 'chawal', 'pulses', 'staple', 'oil', 'ghee'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/2821/2821805.png', // Clean 2D sack of grain & wheat
   },
-  // Spices & Masalas
+  // Spices & Masala
   {
-    keywords: ['masala', 'spice', 'oil', 'ghee', 'mirch', 'haldi', 'seasoning', 'salt'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Hot%20pepper/3D/hot_pepper_3d.png',
+    keywords: ['masala', 'spice', 'mirch', 'haldi', 'seasoning', 'salt', 'pepper'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/2771/2771401.png', // Clean 2D spice bowl & seasoning
   },
   // Snacks, Chips & Munchies
   {
-    keywords: ['snack', 'chips', 'munchies', 'namkeen', 'popcorn', 'crisps', 'kurkure'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Popcorn/3D/popcorn_3d.png',
+    keywords: ['snack', 'chips', 'munchies', 'namkeen', 'popcorn', 'crisps', 'kurkure', 'wafer'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/2553/2553691.png', // Clean 2D crisp chips pack
   },
   // Cold Drinks & Juices
   {
-    keywords: ['drink', 'juice', 'beverage', 'soda', 'cola', 'cold drink', 'bottle', 'water'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Beverage%20box/3D/beverage_box_3d.png',
+    keywords: ['drink', 'juice', 'beverage', 'soda', 'cola', 'cold drink', 'water', 'can', 'bottle'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/2405/2405479.png', // Clean 2D refreshing soda / drink can
   },
-  // Breakfast, Noodles & Instant
+  // Breakfast, Noodles & Instant Food
   {
-    keywords: ['noodle', 'instant', 'maggi', 'breakfast', 'cereal', 'oats', 'pasta', 'soup'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Steaming%20bowl/3D/steaming_bowl_3d.png',
+    keywords: ['noodle', 'instant', 'maggi', 'breakfast', 'cereal', 'oats', 'pasta', 'soup', 'ramen'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/3480/3480823.png', // Clean 2D ramen / instant meal
   },
   // Bakery, Biscuits & Sweets
   {
-    keywords: ['sweet', 'bakery', 'biscuit', 'cookie', 'cake', 'mithai', 'chocolate', 'candy'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Cookie/3D/cookie_3d.png',
+    keywords: ['sweet', 'bakery', 'biscuit', 'cookie', 'cake', 'mithai', 'chocolate', 'dessert', 'candy'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/992/992747.png', // Clean 2D bakery croissant & cookies
   },
   // Personal Care & Beauty
   {
     keywords: ['personal', 'care', 'beauty', 'skin', 'soap', 'shampoo', 'lotion', 'cosmetic', 'cream', 'face'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Lotion%20bottle/3D/lotion_bottle_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2965/2965300.png', // Clean 2D cosmetic & personal lotion
   },
   // Cleaning & Home Essentials
   {
-    keywords: ['clean', 'cleaning', 'wash', 'detergent', 'household', 'home care', 'spray', 'mop'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Sponge/3D/sponge_3d.png',
+    keywords: ['clean', 'cleaning', 'wash', 'detergent', 'household', 'home care', 'spray', 'mop', 'wipe'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/995/995053.png', // Clean 2D cleaning spray bottle & sponge
   },
   // Baby Care
   {
     keywords: ['baby', 'diaper', 'infant', 'toddler', 'feeder', 'wipes'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Baby%20bottle/3D/baby_bottle_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2829/2829824.png', // Clean 2D baby feeding bottle & rattle
   },
   // Pharma & Wellness
   {
     keywords: ['pharma', 'medicine', 'wellness', 'health', 'first aid', 'pill', 'tablet', 'cure'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Pill/3D/pill_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/883/883407.png', // Clean 2D medical health first-aid
   },
   // Pet Care
   {
-    keywords: ['pet', 'dog', 'cat', 'puppy', 'kitten', 'animal'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Dog%20face/3D/dog_face_3d.png',
+    keywords: ['pet', 'dog', 'cat', 'puppy', 'kitten', 'animal', 'pet food'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/616/616408.png', // Clean 2D pet care dog & bowl
   },
   // Meat, Chicken & Fish
   {
-    keywords: ['meat', 'chicken', 'fish', 'seafood', 'egg', 'mutton', 'non-veg'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Poultry%20leg/3D/poultry_leg_3d.png',
+    keywords: ['meat', 'chicken', 'fish', 'seafood', 'mutton', 'non-veg'],
+    icon: 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png', // Clean 2D poultry & meat
   },
   // Paan Corner
   {
     keywords: ['paan', 'mouth freshener', 'mint', 'supari'],
-    icon: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Herb/3D/herb_3d.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2909/2909894.png', // Clean 2D herbal paan & leaves
   },
 ];
 
+export const DEFAULT_CATEGORY_ICON =
+  'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
+
 export const resolveCategory3DIcon = (name = '', slug = '', fallbackIcon = null) => {
   // If the user entered an actual custom image URL starting with http, use it
-  if (fallbackIcon && (fallbackIcon.startsWith('http://') || fallbackIcon.startsWith('https://')) && !fallbackIcon.includes('plasticine')) {
+  if (
+    fallbackIcon &&
+    (fallbackIcon.startsWith('http://') || fallbackIcon.startsWith('https://')) &&
+    !fallbackIcon.includes('plasticine') &&
+    !fallbackIcon.includes('fluentui-emoji')
+  ) {
     return fallbackIcon;
   }
 
@@ -101,11 +109,12 @@ export const resolveCategory3DIcon = (name = '', slug = '', fallbackIcon = null)
     if (matched) return rule.icon;
   }
 
-  // Default fallback 3D shopping bag
-  return 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
+  // Default fallback 2D flat shopping bag
+  return DEFAULT_CATEGORY_ICON;
 };
 
 export default {
   CATEGORY_KEYWORD_3D_MAP,
+  DEFAULT_CATEGORY_ICON,
   resolveCategory3DIcon,
 };

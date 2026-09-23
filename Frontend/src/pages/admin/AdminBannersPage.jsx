@@ -119,7 +119,7 @@ export default function AdminBannersPage() {
     title: 'Groceries delivered in 10 minutes',
     subtitle: 'Fresh vegetables, dairy, farm eggs & daily pantry essentials rushed directly to your doorstep.',
     badge: '⚡ 10-Minute Hyperlocal Delivery',
-    ctaText: 'Order Now →',
+    ctaText: 'Order Now',
     imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=80',
     link: '/products?flashDeal=true',
     targetType: 'custom',
@@ -136,7 +136,7 @@ export default function AdminBannersPage() {
         title: existingTopBanner.title || '',
         subtitle: existingTopBanner.subtitle || '',
         badge: existingTopBanner.badge || '',
-        ctaText: existingTopBanner.ctaText || 'Order Now →',
+        ctaText: existingTopBanner.ctaText ? existingTopBanner.ctaText.replace(/[\s→\-]+$/, '').trim() : 'Order Now',
         imageUrl: existingTopBanner.imageUrl || '',
         link: existingTopBanner.link || '/products',
         targetType: existingTopBanner.targetType || 'custom',
@@ -592,7 +592,7 @@ export default function AdminBannersPage() {
                     type="text"
                     value={topBannerData.ctaText}
                     onChange={(e) => setTopBannerData({ ...topBannerData, ctaText: e.target.value })}
-                    placeholder="e.g. Order Now → or Claim Offer"
+                    placeholder="e.g. Order Now or Claim Offer"
                     className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-bold"
                   />
                 </div>

@@ -251,11 +251,12 @@ export default function AdminCategoriesPage() {
                               cat.icon || (cat.image?.startsWith('http') ? cat.image : null)
                             )}
                             alt={cat.name}
+                            referrerPolicy="no-referrer"
                             className="h-7 w-7 object-contain"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src =
-                                'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
+                                'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
                             }}
                           />
                         </div>
@@ -365,20 +366,21 @@ export default function AdminCategoriesPage() {
               <img
                 src={resolveCategory3DIcon(formData.name, formData.slug, formData.image)}
                 alt="Preview"
+                referrerPolicy="no-referrer"
                 className="w-8 h-8 object-contain"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
-                    'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
+                    'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
                 }}
               />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-800">Smart 3D Icon Auto-Detection</p>
+              <p className="text-xs font-bold text-slate-800">Smart 2D Icon Auto-Detection</p>
               <p className="text-[11px] text-slate-500">
                 {formData.image?.trim()
                   ? 'Using custom image provided above'
-                  : 'Auto-detected based on category name/slug keywords. Leave blank to keep 3D icon.'}
+                  : 'Auto-detected based on category name/slug keywords. Leave blank to keep 2D icon.'}
               </p>
             </div>
           </div>

@@ -32,7 +32,7 @@ export default function HomePage() {
         isError={flashDealsQuery.isError}
         onRetry={flashDealsQuery.refetch}
         to={`${ROUTES.PRODUCTS}?flashDeal=true`}
-        viewAllLabel="View All →"
+        viewAllLabel="View All"
         dense
       />
 
@@ -46,7 +46,7 @@ export default function HomePage() {
         isError={staplesQuery.isError}
         onRetry={staplesQuery.refetch}
         to={`${ROUTES.PRODUCTS}?category=atta-rice-dal`}
-        viewAllLabel="View All →"
+        viewAllLabel="View All"
         dense
       />
 

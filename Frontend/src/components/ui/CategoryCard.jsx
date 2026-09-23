@@ -44,7 +44,7 @@ export default function CategoryCard({
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
-              'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Shopping%20bags/3D/shopping_bags_3d.png';
+              'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
           }}
         />
       );

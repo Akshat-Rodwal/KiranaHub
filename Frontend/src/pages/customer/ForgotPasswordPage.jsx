@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import authService from '../../services/auth.service.js';
 import Button from '../../components/common/Button.jsx';
 import Input from '../../components/common/Input.jsx';
@@ -421,9 +422,10 @@ export default function ForgotPasswordPage() {
                         setOtpError('');
                       }}
                       disabled={isVerifyingOtp}
-                      className="w-full text-center text-xs font-semibold text-text-muted hover:text-text-primary py-2 transition-colors"
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-text-muted hover:text-text-primary py-2 transition-colors group cursor-pointer"
                     >
-                      ← Change email or phone number
+                      <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" strokeWidth={2} />
+                      <span>Change email or phone number</span>
                     </button>
                   </div>
                 </motion.div>

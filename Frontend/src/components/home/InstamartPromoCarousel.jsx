@@ -190,8 +190,9 @@ export default function InstamartPromoCarousel() {
                     </div>
 
                     <div>
-                      <span className="inline-flex items-center gap-1.5 bg-white text-slate-950 font-black px-5 py-2 rounded-full text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all shadow-md active:scale-95">
-                        {card.ctaText || 'SHOP NOW'} →
+                      <span className="inline-flex items-center gap-1.5 bg-white text-slate-950 font-black px-5 py-2 rounded-full text-xs uppercase tracking-wider group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-md active:scale-95">
+                        <span>{(card.ctaText || 'SHOP NOW').replace(/[\s→\-]+$/, '').trim()}</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
                       </span>
                     </div>
                   </div>

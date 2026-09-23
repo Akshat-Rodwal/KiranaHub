@@ -9,7 +9,7 @@ const DEFAULT_TOP_BANNER = {
   title: 'Groceries delivered in 10 minutes',
   subtitle: 'Fresh vegetables, dairy, farm eggs & daily pantry essentials rushed directly to your doorstep.',
   badge: '⚡ 10-Minute Hyperlocal Delivery',
-  ctaText: 'Order Now →',
+  ctaText: 'Order Now',
   link: '/products?flashDeal=true',
 };
 
@@ -97,7 +97,7 @@ export default function TopSingleBanner() {
           {topBanner.ctaText && (
             <div className="mt-2.5 sm:mt-4">
               <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0c831f] hover:bg-[#0a6d1a] px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-black text-white shadow-md transition-all group-hover:scale-105 active:scale-95 cursor-pointer w-fit">
-                <span>{topBanner.ctaText}</span>
+                <span>{topBanner.ctaText.replace(/[\s→\-]+$/, '').trim()}</span>
                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
               </span>
             </div>
