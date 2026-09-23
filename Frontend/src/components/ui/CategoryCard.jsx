@@ -39,7 +39,8 @@ export default function CategoryCard({
           src={iconSrc}
           alt={name}
           loading="lazy"
-          className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-sm group-hover:scale-110 transition-transform duration-300 pointer-events-none select-none"
+          referrerPolicy="no-referrer"
+          className="w-13 h-13 sm:w-15 sm:h-15 object-contain transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-115 group-hover:-translate-y-0.5 drop-shadow-[0_4px_6px_rgba(0,0,0,0.05)] pointer-events-none select-none"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src =
@@ -51,14 +52,14 @@ export default function CategoryCard({
 
     if (isValidElement(icon)) {
       return (
-        <div className="flex items-center justify-center text-emerald-700 transition-transform duration-300 group-hover:scale-110">
+        <div className="flex items-center justify-center text-emerald-700 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-115">
           {icon}
         </div>
       );
     }
 
     return (
-      <div className="flex items-center justify-center text-emerald-700 transition-transform duration-300 group-hover:scale-110">
+      <div className="flex items-center justify-center text-emerald-700 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-115">
         <ShoppingBag className="w-8 h-8" strokeWidth={2} />
       </div>
     );
@@ -69,7 +70,7 @@ export default function CategoryCard({
       {/* KiranaHub Ultra-Soft Airy Pastel Circular Container */}
       <div
         className={classNames(
-          'w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-b from-white via-[#f8fbf9] to-[#edf6f2]/80 border border-emerald-100/90 p-2.5 sm:p-3 flex items-center justify-center shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-[#f1f8f4] group-hover:border-emerald-300/80 group-hover:shadow-md group-hover:shadow-emerald-950/5'
+          'w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-b from-white via-[#f8fbf9] to-[#edf6f2]/80 border border-emerald-100/90 p-2.5 sm:p-3 flex items-center justify-center shadow-xs transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-105 group-hover:bg-[#f0faf4] group-hover:border-emerald-300 group-hover:shadow-[0_8px_20px_-4px_rgba(16,185,129,0.18)] cursor-pointer select-none'
         )}
       >
         {renderIconContent()}
@@ -77,7 +78,7 @@ export default function CategoryCard({
 
       {showLabel && (
         <div className="mt-1 text-center min-w-0 w-full px-0.5">
-          <p className="text-xs sm:text-[13px] font-bold text-slate-800 text-center mt-2 group-hover:text-emerald-700 transition-colors line-clamp-1">
+          <p className="text-xs sm:text-[13px] font-bold text-slate-800 text-center mt-2 group-hover:text-emerald-700 transition-colors duration-300 line-clamp-1">
             {name}
           </p>
           {showCount && typeof count === 'number' && (
