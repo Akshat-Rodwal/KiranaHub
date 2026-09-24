@@ -102,6 +102,22 @@ function App() {
           }
         />
         <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.ORDER}
+          element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path={ROUTES.CHECKOUT}
           element={
             <ProtectedRoute>

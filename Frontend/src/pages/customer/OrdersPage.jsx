@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import Container from '../../components/common/Container.jsx';
@@ -8,6 +8,7 @@ import Badge from '../../components/common/Badge.jsx';
 import { toast } from '../../components/common/Toast.jsx';
 import apiClient from '../../services/apiClient.js';
 import orderService from '../../services/order.service.js';
+import paymentService from '../../services/payment.service.js';
 import LiveOrderTrackerModal from '../../components/order/LiveOrderTrackerModal.jsx';
 import { ROUTES } from '../../constants/index.js';
 import { formatPrice } from '../../utils/index.js';
@@ -138,6 +139,8 @@ function OrderTrackingStepper({ currentStatus }) {
 }
 
 export default function OrdersPage() {
+  const { id: routeOrderId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -148,6 +151,7 @@ export default function OrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cancellingId, setCancellingId] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
+  const [payingOrderId, setPayingOrderId] = useState(null);
 
   const fetchOrders = useCallback(async (targetPage = 1) => {
     try {
@@ -268,6 +272,154 @@ export default function OrdersPage() {
       } finally {
         setCancellingId(null);
       }
+    }
+  };
+
+  // Handle /orders/:id?success=true or ?orderId=...&success=true
+  useEffect(() => {
+    const targetOrderId = routeOrderId || searchParams.get('orderId');
+    if (!targetOrderId) return;
+
+    if (orders.length > 0) {
+      const match = orders.find(
+        (o) =>
+          (o._id || o.id) === targetOrderId ||
+          (o._id || o.id)?.slice(-8).toLowerCase() === targetOrderId.toLowerCase(),
+      );
+      if (match) {
+        setTrackingOrder(match);
+        setExpandedOrders((prev) => ({ ...prev, [match._id || match.id]: true }));
+      }
+    } else if (!trackingOrder) {
+      orderService
+        .getOrderById(targetOrderId)
+        .then((res) => {
+          const fetched = res?.data || res;
+          if (fetched) {
+            setTrackingOrder(fetched);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [routeOrderId, searchParams, orders, trackingOrder]);
+
+  const handlePayOrder = async (order) => {
+    const orderId = order?._id || order?.id;
+    if (!orderId || payingOrderId) return; // Prevent rapid double-clicks
+
+    setPayingOrderId(orderId);
+
+    try {
+      const rzpDataRes = await paymentService.createRazorpayOrder(orderId);
+      const rzpData = rzpDataRes?.data || rzpDataRes;
+
+      if (rzpData?.alreadyPaid || rzpDataRes?.alreadyPaid) {
+        toast.success('This order is already paid! Redirecting to tracking...');
+        setOrders((prev) =>
+          prev.map((o) =>
+            (o._id || o.id) === orderId
+              ? {
+                  ...o,
+                  paymentStatus: 'PAID',
+                  orderStatus: o.orderStatus === 'PENDING' ? 'CONFIRMED' : o.orderStatus,
+                }
+              : o,
+          ),
+        );
+        setTrackingOrder({ ...order, paymentStatus: 'PAID' });
+        setSearchParams({ success: 'true', orderId });
+        setPayingOrderId(null);
+        return;
+      }
+
+      const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+          if (window.Razorpay) return resolve(true);
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        throw new Error('Razorpay SDK failed to load. Please check your network connection.');
+      }
+
+      const options = {
+        key: rzpData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+        amount: rzpData.amount,
+        currency: rzpData.currency || 'INR',
+        name: 'KiranaHub Quick-Commerce',
+        description: `Order #${orderId.slice(-6).toUpperCase()} Payment`,
+        order_id: rzpData.razorpayOrderId,
+        prefill: {
+          name: rzpData.customer?.name || order.deliveryAddress?.receiverName || '',
+          email: rzpData.customer?.email || '',
+          contact: rzpData.customer?.phone || order.deliveryAddress?.receiverPhone || '',
+        },
+        theme: {
+          color: '#10b981',
+        },
+        modal: {
+          ondismiss: function () {
+            setPayingOrderId(null);
+            toast.warning('Payment was cancelled.');
+          },
+        },
+        handler: async function (response) {
+          try {
+            await paymentService.verifyPayment({
+              orderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast.success('Payment Verified! Order Confirmed!');
+            fetchOrders(page);
+            setTrackingOrder({ ...order, paymentStatus: 'PAID', orderStatus: 'CONFIRMED' });
+          } catch (vErr) {
+            toast.error('Payment Error', { description: vErr?.message || 'Verification failed' });
+          } finally {
+            setPayingOrderId(null);
+          }
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        setPayingOrderId(null);
+        toast.error('Payment Failed', { description: resp?.error?.description || 'Could not complete payment.' });
+      });
+      rzp.open();
+    } catch (err) {
+      const isAlreadyPaid =
+        err?.response?.data?.alreadyPaid ||
+        err?.data?.alreadyPaid ||
+        err?.alreadyPaid ||
+        (typeof err?.message === 'string' && err.message.toLowerCase().includes('already been paid'));
+
+      if (isAlreadyPaid) {
+        toast.success('This order is already paid! Redirecting to tracking...');
+        setOrders((prev) =>
+          prev.map((o) =>
+            (o._id || o.id) === orderId
+              ? {
+                  ...o,
+                  paymentStatus: 'PAID',
+                  orderStatus: o.orderStatus === 'PENDING' ? 'CONFIRMED' : o.orderStatus,
+                }
+              : o,
+          ),
+        );
+        setTrackingOrder({ ...order, paymentStatus: 'PAID' });
+        setSearchParams({ success: 'true', orderId });
+      } else {
+        toast.error('Payment could not be started', { description: err?.message || 'Please try again.' });
+      }
+      setPayingOrderId(null);
     }
   };
 
@@ -557,6 +709,18 @@ export default function OrdersPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
+                            {/* Pay Now Option for unpaid online orders */}
+                            {order?.paymentStatus === 'PENDING' && order?.orderStatus !== 'CANCELLED' && (
+                              <button
+                                type="button"
+                                disabled={payingOrderId === orderId}
+                                onClick={() => handlePayOrder(order)}
+                                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <span>{payingOrderId === orderId ? 'Processing...' : '💳 Pay Now'}</span>
+                              </button>
+                            )}
+
                             {/* Track Live Option for active orders */}
                             {['PENDING', 'CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes((order?.orderStatus || '').toUpperCase()) && (
                               <button

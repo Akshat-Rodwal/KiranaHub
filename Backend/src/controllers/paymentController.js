@@ -38,7 +38,17 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
   }
 
   if (order.paymentStatus === 'PAID') {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Order has already been paid for');
+    return res.status(200).json({
+      success: true,
+      alreadyPaid: true,
+      message: 'Order has already been paid for',
+      orderId: order._id,
+      data: {
+        alreadyPaid: true,
+        orderId: order._id,
+        message: 'Order has already been paid for',
+      },
+    });
   }
 
   const grandTotal = order.pricing?.grandTotal || 0;

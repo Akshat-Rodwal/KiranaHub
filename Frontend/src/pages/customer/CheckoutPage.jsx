@@ -165,6 +165,7 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (isSubmitting) return; // Prevent rapid double-clicks from firing concurrent create-order requests
     setErrorMessage('');
     if (!validateAddress()) {
       toast.error('Please complete the delivery address');
@@ -245,6 +246,15 @@ export default function CheckoutPage() {
         const rzpDataRes = await paymentService.createRazorpayOrder(orderId);
         const rzpData = rzpDataRes.data || rzpDataRes;
 
+        // If the order has already been paid for (concurrent request or edge case):
+        if (rzpData?.alreadyPaid || rzpDataRes?.alreadyPaid) {
+          clearCart();
+          toast.success("This order is already paid! Redirecting to tracking...");
+          setIsSubmitting(false);
+          navigate(`/orders/${orderId}?success=true`, { replace: true });
+          return;
+        }
+
         const options = {
           key: rzpData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '',
           amount: rzpData.amount,
@@ -303,6 +313,25 @@ export default function CheckoutPage() {
         rzp.open();
       }
     } catch (err) {
+      const isAlreadyPaid =
+        err?.response?.data?.alreadyPaid ||
+        err?.data?.alreadyPaid ||
+        err?.alreadyPaid ||
+        (typeof err?.message === 'string' && err.message.toLowerCase().includes('already been paid'));
+
+      if (isAlreadyPaid) {
+        clearCart();
+        toast.success("This order is already paid! Redirecting to tracking...");
+        const targetId =
+          err?.response?.data?.orderId ||
+          err?.data?.orderId ||
+          err?.orderId ||
+          '';
+        setIsSubmitting(false);
+        navigate(targetId ? `/orders/${targetId}?success=true` : `/orders?success=true`, { replace: true });
+        return;
+      }
+
       const msg = err?.message || err?.error || 'Failed to place order. Please try again.';
       setErrorMessage(msg);
       toast.error('Order Failed', { description: msg });
