@@ -9,6 +9,7 @@ import Footer from '../components/layout/Footer.jsx';
 import ToastContainer from '../components/common/Toast.jsx';
 import CartDrawer from '../components/cart/CartDrawer.jsx';
 import MobileFloatingCartPill from '../components/cart/MobileFloatingCartPill.jsx';
+import ActiveOrderBottomBar from '../components/order/ActiveOrderBottomBar.jsx';
 import { ModalProvider } from '../components/common/Modal.jsx';
 import PageTransition from '../components/common/PageTransition.jsx';
 
@@ -36,6 +37,7 @@ export default function CustomerLayout() {
           </PageTransition>
         </AnimatePresence>
 
+        <ActiveOrderBottomBar />
         <MobileFloatingCartPill />
         <MobileBottomNavigation />
         <CartDrawer />

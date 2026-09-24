@@ -13,11 +13,11 @@ const STORE_COORDS = [77.2167, 28.6328];
 const DESTINATION_COORDS = [77.2310, 28.6480];
 
 const STAGES = [
-  { key: 'CONFIRMED', label: 'Order Confirmed', icon: '⚡' },
-  { key: 'PREPARING', label: 'Packing Items', icon: '🛍️' },
-  { key: 'PICKED_UP', label: 'Order Picked Up', icon: '📦' },
-  { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: '🛵' },
-  { key: 'DELIVERED', label: 'At Your Doorstep', icon: '🏠' },
+  { key: 'CONFIRMED', label: 'Order Confirmed & Sent to Store', shortLabel: 'Confirmed', icon: '⚡' },
+  { key: 'ASSIGNED', label: 'Delivery Partner Assigned (Vikram Singh)', shortLabel: 'Assigned', icon: '🛵' },
+  { key: 'PREPARING', label: 'Partner heading to Dark Store', shortLabel: 'At Store', icon: '🛍️' },
+  { key: 'OUT_FOR_DELIVERY', label: 'Order Picked Up & On the Way', shortLabel: 'On the Way', icon: '📦' },
+  { key: 'DELIVERED', label: 'Arrived at Doorstep', shortLabel: 'Arrived', icon: '🏠' },
 ];
 
 export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
@@ -83,13 +83,20 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
 
+    const customerCoords =
+      order?.deliveryAddress?.coords &&
+      typeof order.deliveryAddress.coords.lng === 'number' &&
+      typeof order.deliveryAddress.coords.lat === 'number'
+        ? [order.deliveryAddress.coords.lng, order.deliveryAddress.coords.lat]
+        : DESTINATION_COORDS;
+
     try {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: 'mapbox://styles/mapbox/light-v11',
         center: [
-          (STORE_COORDS[0] + DESTINATION_COORDS[0]) / 2,
-          (STORE_COORDS[1] + DESTINATION_COORDS[1]) / 2,
+          (STORE_COORDS[0] + customerCoords[0]) / 2,
+          (STORE_COORDS[1] + customerCoords[1]) / 2,
         ],
         zoom: 13.5,
         attributionControl: false,
@@ -108,8 +115,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
               STORE_COORDS,
               [77.2200, 28.6360],
               [77.2245, 28.6410],
-              [77.2270, 28.6450],
-              DESTINATION_COORDS,
+              customerCoords,
             ],
           },
         };
@@ -165,7 +171,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
           'w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-lg border-2 border-white text-base font-bold select-none cursor-pointer';
         destEl.innerHTML = '🏠';
         destEl.title = 'Your Delivery Address';
-        new mapboxgl.Marker(destEl).setLngLat(DESTINATION_COORDS).addTo(map);
+        new mapboxgl.Marker(destEl).setLngLat(customerCoords).addTo(map);
 
         // 3. Animated Delivery Scooter Marker (🛵)
         const riderEl = document.createElement('div');
@@ -425,12 +431,14 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
               <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
-                    Share with Rider on Delivery
+                    Doorstep Delivery Security
                   </span>
-                  <span className="text-xs font-bold text-slate-700">Delivery Confirmation OTP</span>
+                  <span className="text-xs font-bold text-slate-800">
+                    Share OTP <span className="font-mono text-emerald-700 font-black">{order?.deliveryOtp || '1234'}</span> with delivery partner at doorstep
+                  </span>
                 </div>
-                <span className="font-mono font-black text-lg text-emerald-700 bg-white px-3 py-1 rounded-xl shadow-xs border border-emerald-300">
-                  {order?.deliveryOtp || '9842'}
+                <span className="font-mono font-black text-xl text-emerald-700 bg-white px-3 py-1.5 rounded-xl shadow-xs border border-emerald-300 ml-2 shrink-0">
+                  {order?.deliveryOtp || '1234'}
                 </span>
               </div>
 

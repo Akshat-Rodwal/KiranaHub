@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, ShieldCheck, Heart, Sparkles, AlertCircle } from 'lucide-react';
+import { Clock, ShieldCheck, Heart, Sparkles, AlertCircle, Navigation, Loader2, CheckCircle2 } from 'lucide-react';
 
 import Container from '../../components/common/Container.jsx';
 import Input from '../../components/common/Input.jsx';
@@ -13,6 +13,7 @@ import paymentService from '../../services/payment.service.js';
 import cartHoldService from '../../services/cartHold.service.js';
 import { ROUTES } from '../../constants/index.js';
 import { formatPrice } from '../../utils/index.js';
+import { detectCurrentLocation } from '../../utils/geolocation.js';
 import {
   IconShield,
   IconArrowRight,
@@ -54,6 +55,8 @@ export default function CheckoutPage() {
   const savedAddresses = user?.addresses || [];
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
   const [isCustomAddress, setIsCustomAddress] = useState(savedAddresses.length === 0);
+  const [detectedCoords, setDetectedCoords] = useState(null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const [addressForm, setAddressForm] = useState({
     type: 'HOME',
@@ -75,8 +78,8 @@ export default function CheckoutPage() {
   const [selectedInstruction, setSelectedInstruction] = useState('Leave at door');
   const [customInstruction, setCustomInstruction] = useState('');
 
-  // Step 3: Payment Method selection
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  // Step 3: Payment Method selection (UPI by default for Instamart standard)
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
 
   // Total with Rider Tip
   const finalPayableTotal = Math.max(0, total + (deliveryTip || 0));
@@ -139,6 +142,31 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleAutoDetectLocation = async () => {
+    setIsDetectingLocation(true);
+    try {
+      const detected = await detectCurrentLocation();
+      setAddressForm((prev) => ({
+        ...prev,
+        addressLine1: detected.addressLine1 || prev.addressLine1,
+        city: detected.city || prev.city,
+        state: detected.state || prev.state,
+        pincode: detected.pincode || prev.pincode,
+      }));
+      setDetectedCoords(detected.coords);
+      setIsCustomAddress(true);
+      toast.success('Location Detected via Mapbox!', {
+        description: `Auto-filled: ${detected.addressLine1}, ${detected.city} (${detected.coords.lat.toFixed(4)}, ${detected.coords.lng.toFixed(4)})`,
+      });
+    } catch (err) {
+      toast.error('Location Auto-detect Failed', {
+        description: err.message || 'Please enable browser GPS permissions and try again.',
+      });
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
+
   const validateAddress = () => {
     if (!isCustomAddress && savedAddresses.length > 0) {
       return true;
@@ -185,6 +213,7 @@ export default function CheckoutPage() {
         city: saved.city || 'New Delhi',
         state: saved.state || 'Delhi',
         pincode: saved.pincode || '110001',
+        coords: detectedCoords || saved.coords || undefined,
       };
     } else {
       finalAddress = {
@@ -197,6 +226,7 @@ export default function CheckoutPage() {
         city: addressForm.city.trim(),
         state: addressForm.state.trim(),
         pincode: addressForm.pincode.replace(/\D/g, ''),
+        coords: detectedCoords || undefined,
       };
     }
 
@@ -210,9 +240,9 @@ export default function CheckoutPage() {
         quantity: i.quantity,
       })),
       deliveryAddress: finalAddress,
-      paymentMethod: paymentMethod === 'COD' ? 'COD' : 'ONLINE',
+      paymentMethod: paymentMethod === 'COD' ? 'COD' : paymentMethod === 'UPI' ? 'UPI' : 'CARD',
       deliveryTip: deliveryTip || 0,
-      deliveryInstructions: instructions || 'Deliver to doorstep',
+      deliveryInstructions: instructions ? [instructions] : ['Deliver to doorstep'],
       cartToken,
     };
 
@@ -229,9 +259,9 @@ export default function CheckoutPage() {
           description: `Order #${orderId.slice(-6).toUpperCase()} is being prepared.`,
         });
 
-        navigate(`/order-success/${orderId}`, { replace: true });
+        navigate(`/orders/${orderId}?success=true`, { replace: true });
       } else {
-        // Razorpay Gateway Flow (P1)
+        // Razorpay Gateway Flow (UPI & Card pre-configured)
         const loaded = await loadRazorpayScript();
         if (!loaded) {
           throw new Error('Razorpay SDK failed to load. Please check your internet connection.');
@@ -255,6 +285,8 @@ export default function CheckoutPage() {
           return;
         }
 
+        const selectedRzpMethod = paymentMethod === 'UPI' ? 'upi' : 'card';
+
         const options = {
           key: rzpData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '',
           amount: rzpData.amount,
@@ -266,6 +298,25 @@ export default function CheckoutPage() {
             name: rzpData.customer?.name || finalAddress.receiverName,
             email: rzpData.customer?.email || user?.email || 'customer@kiranahub.local',
             contact: rzpData.customer?.phone || finalAddress.receiverPhone,
+            method: selectedRzpMethod,
+          },
+          config: {
+            display: {
+              blocks: {
+                preferred: {
+                  name: paymentMethod === 'UPI' ? 'Pay via UPI' : 'Pay via Cards',
+                  instruments: [
+                    {
+                      method: selectedRzpMethod,
+                    },
+                  ],
+                },
+              },
+              sequence: ['block.preferred'],
+              preferences: {
+                show_default_blocks: true,
+              },
+            },
           },
           theme: {
             color: '#059669', // KiranaHub Emerald theme
@@ -412,6 +463,40 @@ export default function CheckoutPage() {
                   >
                     {isCustomAddress ? 'Use Saved Address' : '+ New Address'}
                   </button>
+                )}
+              </div>
+
+              {/* Primary GPS Auto-detect Action (Swiggy Instamart / Zepto standard) */}
+              <div className="mb-5 p-4 rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white border border-emerald-200/90 shadow-2xs">
+                <button
+                  type="button"
+                  disabled={isDetectingLocation}
+                  onClick={handleAutoDetectLocation}
+                  className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm shadow-brand hover:shadow-lg transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {isDetectingLocation ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Detecting your exact GPS coordinates via Mapbox...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-4 h-4 text-emerald-100" />
+                      <span>📍 Use Current Location (GPS Auto-detect)</span>
+                    </>
+                  )}
+                </button>
+                {detectedCoords ? (
+                  <div className="mt-2.5 flex items-center gap-1.5 text-xs text-emerald-800 font-bold bg-white/80 px-3 py-1.5 rounded-xl border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">
+                      GPS Locked: {addressForm.addressLine1 || 'Detected Location'}, {addressForm.city} ({detectedCoords.lat.toFixed(4)}, {detectedCoords.lng.toFixed(4)})
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 font-medium text-center mt-2">
+                    Instant address autofill with high-accuracy door-to-door GPS coordinates
+                  </p>
                 )}
               </div>
 
@@ -654,7 +739,7 @@ export default function CheckoutPage() {
 
             {/* STEP 3: Payment Method Accordion */}
             <div className="rounded-4xl border border-stone-200/70 bg-white p-6 sm:p-7 shadow-xs">
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-brand">
                   3
                 </div>
@@ -662,7 +747,15 @@ export default function CheckoutPage() {
                   <h2 className="font-display text-base sm:text-lg font-black text-slate-900">
                     Select Payment Method
                   </h2>
-                  <p className="text-xs text-slate-500 font-medium">Verified Razorpay Gateway & Cash on Delivery</p>
+                  <p className="text-xs text-slate-500 font-medium">Instant UPI, Card Gateway & Cash on Delivery</p>
+                </div>
+              </div>
+
+              {/* Instamart Test Mode Helper Banner */}
+              <div className="mb-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 p-3.5 flex items-start gap-2.5 shadow-2xs">
+                <span className="text-base shrink-0">💡</span>
+                <div className="text-xs text-amber-950 font-medium leading-relaxed">
+                  <span className="font-bold text-amber-900">Razorpay Test Mode:</span> Test UPI: Use <code className="font-mono bg-amber-100/90 text-amber-900 px-1.5 py-0.5 rounded font-bold">success@razorpay</code> | Test Card: <code className="font-mono bg-amber-100/90 text-amber-900 px-1.5 py-0.5 rounded font-bold">4111 1111 1111</code> with any future date &amp; CVV <code className="font-mono bg-amber-100/90 text-amber-900 px-1.5 py-0.5 rounded font-bold">123</code>.
                 </div>
               </div>
 
@@ -670,25 +763,25 @@ export default function CheckoutPage() {
                 {[
                   {
                     id: 'UPI',
-                    icon: '📱',
-                    title: 'UPI Instant Payment (Razorpay)',
-                    desc: 'Google Pay, PhonePe, Paytm, or any UPI ID / QR',
-                    badge: 'Fast & Secure',
+                    icon: '🟢',
+                    title: 'UPI (Google Pay, PhonePe, Paytm, QR)',
+                    desc: 'Direct UPI sheet / QR code via Razorpay test gateway',
+                    badge: 'Instant & Fast',
                     badgeVariant: 'success',
                   },
                   {
                     id: 'CARD',
                     icon: '💳',
-                    title: 'Credit / Debit Card (Razorpay)',
-                    desc: 'Visa, MasterCard, RuPay & Corporate Cards',
+                    title: 'Credit / Debit Cards (Visa, Mastercard, RuPay)',
+                    desc: 'Visa, MasterCard, RuPay with 256-bit encryption',
                     badge: '256-bit SSL',
                     badgeVariant: 'success',
                   },
                   {
                     id: 'COD',
                     icon: '💵',
-                    title: 'Cash / Pay on Delivery (COD)',
-                    desc: 'Pay cash or scan QR with delivery partner',
+                    title: 'Cash on Delivery (COD)',
+                    desc: 'Pay cash or scan QR with delivery partner at doorstep',
                     badge: 'Doorstep Pay',
                     badgeVariant: 'primary',
                   },
@@ -711,7 +804,7 @@ export default function CheckoutPage() {
                           onChange={() => setPaymentMethod(method.id)}
                           className="h-4.5 w-4.5 text-emerald-600 focus:ring-emerald-500"
                         />
-                        <span className="text-2xl">{method.icon}</span>
+                        <span className="text-xl sm:text-2xl">{method.icon}</span>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm text-slate-900">
@@ -816,7 +909,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <span>
-                        {paymentMethod === 'COD' ? 'Place Order' : 'Pay Now'} • {formatPrice(finalPayableTotal)}
+                        {paymentMethod === 'COD' ? 'Place Order' : 'Proceed to Pay'} • {formatPrice(finalPayableTotal)}
                       </span>
                       <IconArrowRight className="h-4 w-4" />
                     </>

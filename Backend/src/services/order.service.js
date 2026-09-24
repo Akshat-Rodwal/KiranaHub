@@ -9,7 +9,15 @@ import { sendEmail } from '../config/emailConfig.js';
 import { getOrderConfirmationTemplate } from '../utils/emailTemplates.js';
 import { emitNewOrderAlert } from '../socket.js';
 
-const createOrder = async ({ userId, items, deliveryAddress, paymentMethod, cartToken }) => {
+const createOrder = async ({
+  userId,
+  items,
+  deliveryAddress,
+  paymentMethod,
+  cartToken,
+  deliveryTip = 0,
+  deliveryInstructions = [],
+}) => {
   // Phase 1: Pre-validation & Stock Verification
   // We resolve all products and verify stock availability before making any database updates.
   const resolvedItems = [];
@@ -80,9 +88,18 @@ const createOrder = async ({ userId, items, deliveryAddress, paymentMethod, cart
   const deliveryFee = subtotal >= 499 ? 0 : 25;
   const handlingFee = 2;
   const discount = 0;
-  const grandTotal = subtotal + deliveryFee + handlingFee - discount;
+  const parsedTip = typeof deliveryTip === 'number' ? Math.max(0, deliveryTip) : 0;
+  const grandTotal = subtotal + deliveryFee + handlingFee - discount + parsedTip;
 
-  const paymentStatus = paymentMethod === 'COD' ? 'PENDING' : 'PAID';
+  // Initial payment status is always PENDING until confirmed via Razorpay or paid on COD delivery
+  const paymentStatus = 'PENDING';
+
+  // Format delivery instructions
+  const instructionsList = Array.isArray(deliveryInstructions)
+    ? deliveryInstructions
+    : deliveryInstructions
+    ? [String(deliveryInstructions)]
+    : [];
 
   // Phase 4: Create Order Record
   const order = await Order.create({
@@ -99,7 +116,9 @@ const createOrder = async ({ userId, items, deliveryAddress, paymentMethod, cart
     paymentMethod,
     paymentStatus,
     orderStatus: 'PENDING',
-    expectedDeliveryTime: '20-30 mins',
+    expectedDeliveryTime: '10-15 mins',
+    deliveryTip: parsedTip,
+    deliveryInstructions: instructionsList,
   });
 
   // Emit real-time notification to Admin Operations channel

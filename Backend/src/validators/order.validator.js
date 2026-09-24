@@ -91,8 +91,13 @@ export const validateOrderCreate = (req, _res, next) => {
         city: city.trim(),
         state: state.trim(),
         pincode: pincode.trim(),
+        coords: deliveryAddress.coords && typeof deliveryAddress.coords.lat === 'number' && typeof deliveryAddress.coords.lng === 'number'
+          ? { lat: deliveryAddress.coords.lat, lng: deliveryAddress.coords.lng }
+          : undefined,
       },
       paymentMethod: selectedPayment,
+      deliveryTip: typeof req.body?.deliveryTip === 'number' ? req.body.deliveryTip : 0,
+      deliveryInstructions: req.body?.deliveryInstructions || [],
       cartToken: req.body?.cartToken || null,
     };
 

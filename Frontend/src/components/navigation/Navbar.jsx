@@ -12,6 +12,8 @@ import {
   LogOut,
   X,
   Check,
+  Navigation,
+  Loader2,
 } from 'lucide-react';
 import Container from '../common/Container.jsx';
 import SearchBar from '../common/SearchBar.jsx';
@@ -20,11 +22,13 @@ import { classNames, formatPrice } from '../../utils/index.js';
 import useCartStore from '../../store/useCartStore.js';
 import useAuthStore from '../../store/useAuthStore.js';
 import useStoreSettings from '../../hooks/useStoreSettings.js';
+import { detectCurrentLocation } from '../../utils/geolocation.js';
+import { toast } from '../common/Toast.jsx';
 
 const PRESET_LOCATIONS = [
-  { id: 'loc-1', tag: 'Home', address: '7/3, Ward 40, Indore, Madhya Pradesh - 452001', time: '8 mins' },
-  { id: 'loc-2', tag: 'Office', address: 'Vijay Nagar, Scheme 54, Indore - 452010', time: '10 mins' },
-  { id: 'loc-3', tag: 'Other', address: 'New Palasia, Near 56 Dukan, Indore - 452001', time: '12 mins' },
+  { id: 'loc-1', tag: 'Central Hub', address: 'Connaught Place, Barakhamba, New Delhi - 110001', time: '8 mins' },
+  { id: 'loc-2', tag: 'South Hub', address: 'Greater Kailash 1, M-Block Market, New Delhi - 110048', time: '10 mins' },
+  { id: 'loc-3', tag: 'NCR Hub', address: 'Cyber City, Phase 2, DLF Cyber Hub - 122002', time: '12 mins' },
 ];
 
 export default function Navbar() {
@@ -38,7 +42,33 @@ export default function Navbar() {
 
   const [selectedLocation, setSelectedLocation] = useState(PRESET_LOCATIONS[0]);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const handleGpsAutoDetect = async () => {
+    setIsDetectingLocation(true);
+    try {
+      const loc = await detectCurrentLocation();
+      const detectedItem = {
+        id: 'gps-live',
+        tag: 'Current Location',
+        address: `${loc.addressLine1}, ${loc.city}`,
+        time: '10-15 mins',
+        coords: loc.coords,
+      };
+      setSelectedLocation(detectedItem);
+      setIsLocationModalOpen(false);
+      toast.success('Live Location Detected!', {
+        description: `Delivering to ${loc.addressLine1}, ${loc.city}`,
+      });
+    } catch (err) {
+      toast.error('GPS Detection Failed', {
+        description: err.message || 'Please enable location access in your browser settings.',
+      });
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
 
   const handleSearch = (value) => {
     const query = value?.trim();
@@ -136,7 +166,32 @@ export default function Navbar() {
                       </button>
                     </div>
 
-                    <div className="py-2 space-y-1.5 max-h-64 overflow-y-auto">
+                    <div className="pt-3 pb-2">
+                      <button
+                        type="button"
+                        disabled={isDetectingLocation}
+                        onClick={handleGpsAutoDetect}
+                        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-60 mb-2"
+                      >
+                        {isDetectingLocation ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                            <span>Detecting GPS Location...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Navigation className="h-3.5 w-3.5 text-emerald-100" />
+                            <span>📍 Use Current Location (GPS Auto-detect)</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1 px-1">
+                        Or select delivery hub
+                      </div>
+                    </div>
+
+                    <div className="py-1 space-y-1.5 max-h-60 overflow-y-auto">
                       {PRESET_LOCATIONS.map((loc) => {
                         const isSelected = loc.id === selectedLocation.id;
                         return (

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { CheckCircle2, Truck, BellRing } from 'lucide-react';
 
 import useAuthStore from '../../store/useAuthStore.js';
 import adminService from '../../services/admin.service.js';
@@ -23,7 +24,7 @@ import {
 } from '../../utils/icons.jsx';
 
 const STATUS_BADGES = {
-  PENDING: { variant: 'secondary', label: 'Pending' },
+  PENDING: { variant: 'secondary', label: 'Pending Approval' },
   CONFIRMED: { variant: 'primary', label: 'Confirmed' },
   PREPARING: { variant: 'warning', label: 'Preparing' },
   OUT_FOR_DELIVERY: { variant: 'warning', label: 'Out for Delivery' },
@@ -67,6 +68,7 @@ const playAdminOrderChime = () => {
 
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
 
   const {
     data: analyticsRes,
@@ -81,6 +83,36 @@ export default function AdminDashboardPage() {
     refetchOnWindowFocus: true,
   });
 
+  // Live Pending Orders Feed (Needs Admin Approval)
+  const {
+    data: pendingOrdersRes,
+    refetch: refetchPending,
+  } = useQuery({
+    queryKey: ['admin-pending-orders'],
+    queryFn: () => adminService.getAdminOrders({ status: 'PENDING', limit: 10 }),
+    staleTime: 4 * 1000,
+    refetchInterval: 8 * 1000,
+    refetchOnWindowFocus: true,
+  });
+
+  const pendingOrders = pendingOrdersRes?.data?.orders || pendingOrdersRes?.orders || [];
+
+  // 1-Click Accept & Send to Store Mutation
+  const acceptOrderMutation = useMutation({
+    mutationFn: (orderId) => adminService.updateOrderStatus(orderId, 'CONFIRMED'),
+    onSuccess: (_, orderId) => {
+      toast.success('Order Confirmed & Sent to Store! 🚀', {
+        description: `Order #${orderId.slice(-6).toUpperCase()} is now visible in the Delivery Partner App.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-analytics-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+    },
+    onError: (err) => {
+      toast.error('Failed to confirm order', { description: err?.message });
+    },
+  });
+
   // Socket.io real-time listener for incoming orders
   useEffect(() => {
     const socket = getSocket();
@@ -93,19 +125,24 @@ export default function AdminDashboardPage() {
       const amount = formatPrice(newOrder?.pricing?.grandTotal || 0);
 
       toast.success(`⚡ New Order #${orderId} Received!`, {
-        description: `${customer} placed an order for ${amount}. Immediate dispatch required.`,
+        description: `${customer} placed an order for ${amount}. Click 'Accept & Send to Store'.`,
         duration: 8000,
       });
 
       refetch();
+      refetchPending();
     };
 
     socket.on('new_order', handleNewOrder);
+    socket.on('order_status_updated', () => {
+      refetchPending();
+      refetch();
+    });
 
     return () => {
       socket.off('new_order', handleNewOrder);
     };
-  }, [refetch]);
+  }, [refetch, refetchPending]);
 
   const analytics = analyticsRes?.data || analyticsRes || {};
 
@@ -232,6 +269,106 @@ export default function AdminDashboardPage() {
                 </motion.div>
               );
             })}
+          </div>
+
+          {/* LIVE DISPATCH DESK: NEW ORDERS AWAITING APPROVAL */}
+          <div className="rounded-3xl border-2 border-emerald-500/40 bg-white p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xs">
+                  <BellRing className="h-4.5 w-4.5 animate-bounce" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-base font-black text-slate-900">
+                      Live Dispatch Desk: New Orders
+                    </h3>
+                    {pendingOrders.length > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                        {pendingOrders.length} ACTION REQUIRED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Customer orders awaiting store confirmation before rider pickup
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-xs font-semibold text-slate-500 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>Audio Alert Active</span>
+              </div>
+            </div>
+
+            {pendingOrders.length === 0 ? (
+              <div className="py-8 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+                  ✓
+                </div>
+                <p className="font-display font-bold text-sm text-slate-800">All Orders Dispatched!</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  No pending customer orders awaiting confirmation. New orders will pop up here with an audio alert.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-stone-100 mt-2">
+                {pendingOrders.map((order) => {
+                  const orderId = (order._id || order.id || '').slice(-6).toUpperCase();
+                  const customerName = order.deliveryAddress?.receiverName || order.user?.name || 'Customer';
+                  const customerPhone = order.deliveryAddress?.receiverPhone || order.user?.phone || '';
+                  const total = formatPrice(order.pricing?.grandTotal || 0);
+                  const itemCount = order.items?.length || 0;
+                  const isProcessing = acceptOrderMutation.isPending && acceptOrderMutation.variables === (order._id || order.id);
+
+                  return (
+                    <div
+                      key={order._id || order.id}
+                      className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="h-10 w-10 rounded-2xl bg-amber-100 text-amber-900 font-bold flex items-center justify-center shrink-0 text-sm">
+                          ⚡
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-display font-black text-sm text-slate-900">
+                              Order #{orderId}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">
+                              {order.paymentMethod || 'ONLINE'} • {order.paymentStatus || 'PENDING'}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs font-semibold text-slate-800 mt-1">
+                            {customerName} {customerPhone && `(${customerPhone})`} • <span className="font-black text-emerald-700">{total}</span> ({itemCount} {itemCount === 1 ? 'item' : 'items'})
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                            📍 {order.deliveryAddress?.addressLine1}, {order.deliveryAddress?.city}
+                            {order.deliveryInstructions?.length > 0 && ` • 📝 ${order.deliveryInstructions.join(', ')}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          disabled={isProcessing}
+                          onClick={() => acceptOrderMutation.mutate(order._id || order.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-brand px-4 py-2 cursor-pointer flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>{isProcessing ? 'Confirming...' : 'Accept & Send to Store'}</span>
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Revenue Breakdown & Quick Stats */}

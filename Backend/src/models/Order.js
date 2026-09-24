@@ -88,6 +88,10 @@ const deliveryAddressSchema = new mongoose.Schema(
       required: [true, 'Pincode is required'],
       trim: true,
     },
+    coords: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { _id: false },
 );
@@ -172,7 +176,7 @@ const orderSchema = new mongoose.Schema(
         'DELIVERED',
         'CANCELLED',
       ],
-      default: 'CONFIRMED',
+      default: 'PENDING',
       index: true,
     },
     expectedDeliveryTime: {

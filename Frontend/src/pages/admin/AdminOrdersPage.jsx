@@ -26,7 +26,7 @@ const STATUS_BADGES = {
 
 const NEXT_STATUS_MAP = {
   PENDING: [
-    { value: 'CONFIRMED', label: 'Confirm Order' },
+    { value: 'CONFIRMED', label: 'Accept & Send to Store' },
     { value: 'CANCELLED', label: 'Cancel Order' },
   ],
   CONFIRMED: [
