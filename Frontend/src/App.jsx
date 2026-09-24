@@ -26,6 +26,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import OrdersPage from './pages/customer/OrdersPage.jsx';
 import CheckoutPage from './pages/customer/CheckoutPage.jsx';
 import OrderSuccessPage from './pages/customer/OrderSuccessPage.jsx';
+import DeliveryPartnerPage from './pages/delivery/DeliveryPartnerPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 
 function App() {
@@ -137,6 +138,9 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
+
+      {/* Dedicated Delivery Partner Fleet App */}
+      <Route path="/delivery" element={<DeliveryPartnerPage />} />
 
       {/* Admin/Manager Protected Operations */}
       <Route

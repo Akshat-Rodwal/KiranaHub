@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import config from './config/env.js';
+import Order from './models/Order.js';
 
 let io = null;
 
@@ -51,6 +52,61 @@ export const initSocket = (httpServer) => {
       socket.leave('admin_channel');
     });
 
+    // Dedicated Delivery Partner App real-time telemetry
+    socket.on('delivery_partner_location', async ({ orderId, coords }) => {
+      if (orderId && coords) {
+        // Relay immediately to customer tracking room
+        io.to(`order_${orderId}`).emit('rider_moved', {
+          orderId,
+          coords,
+          emittedAt: new Date().toISOString(),
+        });
+
+        // Persist coordinates to MongoDB
+        try {
+          await Order.findByIdAndUpdate(orderId, {
+            'deliveryBoy.currentCoords': {
+              lat: Number(coords.lat),
+              lng: Number(coords.lng),
+            },
+          });
+        } catch (err) {
+          console.error('[Socket] Failed to persist delivery coordinates:', err.message);
+        }
+      }
+    });
+
+    // Delivery partner fulfillment step update
+    socket.on('order_status_step', async ({ orderId, status }) => {
+      if (orderId && status) {
+        try {
+          const updatePayload = { orderStatus: status };
+          if (status === 'DELIVERED') {
+            updatePayload.paymentStatus = 'PAID';
+          }
+
+          const updatedOrder = await Order.findByIdAndUpdate(orderId, updatePayload, { new: true });
+
+          // Broadcast to customer room
+          io.to(`order_${orderId}`).emit('order_status_updated', {
+            orderId,
+            status,
+            order: updatedOrder,
+            emittedAt: new Date().toISOString(),
+          });
+
+          // Broadcast to admin channel
+          io.to('admin_channel').emit('order_status_updated', {
+            orderId,
+            status,
+            order: updatedOrder,
+          });
+        } catch (err) {
+          console.error('[Socket] Failed to update order status step:', err.message);
+        }
+      }
+    });
+
     socket.on('disconnect', () => {
       // Clean disconnect
     });
@@ -73,6 +129,16 @@ export const emitOrderStatusUpdate = (orderId, data) => {
   }
 };
 
+export const emitRiderMoved = (orderId, coords) => {
+  if (io && orderId && coords) {
+    io.to(`order_${orderId}`).emit('rider_moved', {
+      orderId,
+      coords,
+      emittedAt: new Date().toISOString(),
+    });
+  }
+};
+
 export const emitNewOrderAlert = (order) => {
   if (io && order) {
     io.to('admin_channel').emit('new_order_alert', {
@@ -86,5 +152,6 @@ export default {
   initSocket,
   getIO,
   emitOrderStatusUpdate,
+  emitRiderMoved,
   emitNewOrderAlert,
 };

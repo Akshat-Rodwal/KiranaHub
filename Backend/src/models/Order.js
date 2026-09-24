@@ -167,6 +167,7 @@ const orderSchema = new mongoose.Schema(
         'PENDING',
         'CONFIRMED',
         'PREPARING',
+        'PICKED_UP',
         'OUT_FOR_DELIVERY',
         'DELIVERED',
         'CANCELLED',
@@ -176,7 +177,7 @@ const orderSchema = new mongoose.Schema(
     },
     expectedDeliveryTime: {
       type: String,
-      default: '20-30 mins',
+      default: '10-15 mins',
       trim: true,
     },
     razorpayOrderId: {
@@ -201,6 +202,18 @@ const orderSchema = new mongoose.Schema(
       vehicle: { type: String, default: 'Delivery Scooter (DL-08-SK-4022)' },
       vaccinated: { type: Boolean, default: true },
       temperature: { type: String, default: '36.4°C' },
+    },
+    deliveryBoy: {
+      name: { type: String, default: 'Vikram Singh' },
+      phone: { type: String, default: '+91 98765 43210' },
+      currentCoords: {
+        lat: { type: Number, default: 28.6328 },
+        lng: { type: Number, default: 77.2167 },
+      },
+    },
+    deliveryOtp: {
+      type: String,
+      default: () => Math.floor(1000 + Math.random() * 9000).toString(),
     },
     deliveryTip: {
       type: Number,

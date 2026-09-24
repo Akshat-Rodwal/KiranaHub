@@ -7,12 +7,13 @@ const STATUS_TITLES = {
   PENDING: 'Order Received 📋',
   CONFIRMED: 'Order Confirmed! ⚡',
   PREPARING: 'Items Being Packed at Dark Store 🛍️',
+  PICKED_UP: 'Order Picked Up! Delivery partner is on the way 🛍️',
   OUT_FOR_DELIVERY: 'Rider Out for Delivery! 🛵',
   DELIVERED: 'Order Delivered! Enjoy your fresh groceries 🎉',
   CANCELLED: 'Order Cancelled',
 };
 
-export function useOrderSocket(orderId, onStatusUpdate) {
+export function useOrderSocket(orderId, onStatusUpdate, onRiderMoved) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -42,13 +43,23 @@ export function useOrderSocket(orderId, onStatusUpdate) {
       }
     };
 
+    const handleRiderMoved = (data) => {
+      if ((data.orderId === orderId || !data.orderId) && data.coords) {
+        if (typeof onRiderMoved === 'function') {
+          onRiderMoved(data.coords);
+        }
+      }
+    };
+
     socket.on('order_status_updated', handleUpdate);
+    socket.on('rider_moved', handleRiderMoved);
 
     return () => {
       socket.emit('leave_order', orderId);
       socket.off('order_status_updated', handleUpdate);
+      socket.off('rider_moved', handleRiderMoved);
     };
-  }, [orderId, onStatusUpdate, queryClient]);
+  }, [orderId, onStatusUpdate, onRiderMoved, queryClient]);
 }
 
 export default useOrderSocket;

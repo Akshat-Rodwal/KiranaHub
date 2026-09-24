@@ -32,12 +32,17 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Order ID is required to initiate Razorpay checkout');
   }
 
+  console.log(`[PaymentController] createRazorpayOrder received orderId: "${orderId}"`);
+
   const order = await Order.findById(orderId).populate('user', 'name email phone');
   if (!order) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
   }
 
+  console.log(`[PaymentController] Found order: ${order._id}, paymentStatus: "${order.paymentStatus}", grandTotal: ${order.pricing?.grandTotal}`);
+
   if (order.paymentStatus === 'PAID') {
+    console.log(`[PaymentController] Order ${order._id} has already been paid. Returning alreadyPaid response.`);
     return res.status(200).json({
       success: true,
       alreadyPaid: true,

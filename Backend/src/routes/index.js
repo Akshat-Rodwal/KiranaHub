@@ -10,6 +10,7 @@ import bannerRouter from './banner.routes.js';
 import paymentRouter from './payment.routes.js';
 import cartRouter from './cart.routes.js';
 import bundleRouter from './bundle.routes.js';
+import deliveryRouter from './delivery.routes.js';
 
 const router = express.Router();
 
@@ -55,5 +56,6 @@ router.use('/banners', bannerRouter);
 router.use('/payments', paymentRouter);
 router.use('/cart', cartRouter);
 router.use('/bundles', bundleRouter);
+router.use('/delivery', deliveryRouter);
 
 export default router;

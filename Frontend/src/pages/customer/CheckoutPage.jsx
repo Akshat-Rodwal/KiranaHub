@@ -72,7 +72,7 @@ export default function CheckoutPage() {
   // Step 2: Delivery Slot & Instructions & Tip
   const [deliverySlot, setDeliverySlot] = useState('EXPRESS');
   const [deliveryTip, setDeliveryTip] = useState(20);
-  const [selectedInstruction, setSelectedInstruction] = useState('Do not ring bell');
+  const [selectedInstruction, setSelectedInstruction] = useState('Leave at door');
   const [customInstruction, setCustomInstruction] = useState('');
 
   // Step 3: Payment Method selection
@@ -268,14 +268,12 @@ export default function CheckoutPage() {
             contact: rzpData.customer?.phone || finalAddress.receiverPhone,
           },
           theme: {
-            color: '#10b981', // Emerald green KiranaHub theme
+            color: '#059669', // KiranaHub Emerald theme
           },
           modal: {
             ondismiss: function () {
               setIsSubmitting(false);
-              toast.warning('Payment Pending', {
-                description: 'Payment was dismissed. You can complete it in your orders history.',
-              });
+              toast.info('Payment was cancelled or failed. You can retry anytime.');
             },
           },
           handler: async function (response) {
@@ -292,11 +290,11 @@ export default function CheckoutPage() {
               toast.success('Payment Verified! Order Confirmed!', {
                 description: `Payment ID: ${response.razorpay_payment_id}`,
               });
-              navigate(`/order-success/${orderId}`, { replace: true });
+              navigate(`/orders/${orderId}?success=true`, { replace: true });
             } catch (vErr) {
               const msg = vErr?.message || 'Payment verification failed.';
               toast.error('Payment Error', { description: msg });
-              navigate(`/order-success/${orderId}`, { replace: true });
+              navigate(`/orders/${orderId}?success=true`, { replace: true });
             } finally {
               setIsSubmitting(false);
             }
@@ -306,9 +304,7 @@ export default function CheckoutPage() {
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', function (resp) {
           setIsSubmitting(false);
-          toast.error('Payment Failed', {
-            description: resp?.error?.description || 'Transaction could not be completed.',
-          });
+          toast.warning('Payment was cancelled or failed. You can retry anytime.');
         });
         rzp.open();
       }
@@ -598,9 +594,9 @@ export default function CheckoutPage() {
                 </label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {[
-                    'Do not ring bell',
-                    'Leave at the door',
-                    'Call before arriving',
+                    'Leave at door',
+                    'Avoid calling',
+                    "Don't ring bell",
                     'Beware of pet 🐶',
                   ].map((preset) => (
                     <button

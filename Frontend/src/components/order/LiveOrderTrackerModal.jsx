@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, ShieldCheck, Check, Clock, Navigation, MapPin } from 'lucide-react';
+import { X, Phone, ShieldCheck, Check, Clock, Navigation, MapPin, KeyRound, Radio } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import useOrderSocket from '../../hooks/useOrderSocket.js';
@@ -14,7 +14,8 @@ const DESTINATION_COORDS = [77.2310, 28.6480];
 
 const STAGES = [
   { key: 'CONFIRMED', label: 'Order Confirmed', icon: '⚡' },
-  { key: 'PREPARING', label: 'Packing at Dark Store', icon: '🛍️' },
+  { key: 'PREPARING', label: 'Packing Items', icon: '🛍️' },
+  { key: 'PICKED_UP', label: 'Order Picked Up', icon: '📦' },
   { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: '🛵' },
   { key: 'DELIVERED', label: 'At Your Doorstep', icon: '🏠' },
 ];
@@ -26,18 +27,42 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
   const animationFrameRef = useRef(null);
 
   const [currentStatus, setCurrentStatus] = useState(order?.orderStatus || 'CONFIRMED');
-  const [selectedTip, setSelectedTip] = useState(null);
-  const [selectedInstructions, setSelectedInstructions] = useState([]);
-  const [customTip, setCustomTip] = useState('');
+  const [selectedTip, setSelectedTip] = useState(order?.deliveryTip || null);
   const [etaMinutes, setEtaMinutes] = useState(11);
   const [mapError, setMapError] = useState(false);
+  const [hasLiveGps, setHasLiveGps] = useState(false);
+  const [_liveCoords, setLiveCoords] = useState(null);
 
-  // Sync real-time updates via Socket.io
-  useOrderSocket(order?._id || order?.id, (update) => {
-    if (update.status) {
-      setCurrentStatus(update.status);
+  // Sync real-time updates via Socket.io (status updates + live rider GPS)
+  const handleRiderMoved = (coords) => {
+    if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') return;
+    setHasLiveGps(true);
+    setLiveCoords(coords);
+
+    // Cancel fallback synthetic animation loop once real coordinates stream
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
-  });
+
+    if (markerRef.current) {
+      markerRef.current.setLngLat([coords.lng, coords.lat]);
+    }
+
+    if (mapRef.current) {
+      mapRef.current.easeTo({ center: [coords.lng, coords.lat], duration: 1200 });
+    }
+  };
+
+  useOrderSocket(
+    order?._id || order?.id,
+    (update) => {
+      if (update.status) {
+        setCurrentStatus(update.status);
+      }
+    },
+    handleRiderMoved,
+  );
 
   useEffect(() => {
     if (order?.orderStatus) {
@@ -110,7 +135,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
           },
         });
 
-        // Vibrant Dashed Emerald Path
+        // Dashed Emerald Path
         map.addLayer({
           id: 'route-line',
           type: 'line',
@@ -147,48 +172,54 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
         riderEl.className =
           'w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xl border-3 border-white text-xl animate-bounce select-none';
         riderEl.innerHTML = '🛵';
-        riderEl.title = 'Vikram Singh (Rider)';
+        riderEl.title = 'Delivery Partner';
+
+        const initialRiderCoords = order?.deliveryBoy?.currentCoords
+          ? [order.deliveryBoy.currentCoords.lng, order.deliveryBoy.currentCoords.lat]
+          : STORE_COORDS;
 
         const riderMarker = new mapboxgl.Marker(riderEl)
-          .setLngLat(STORE_COORDS)
+          .setLngLat(initialRiderCoords)
           .addTo(map);
 
         markerRef.current = riderMarker;
 
-        // Smooth Interpolation Animation along the route
-        const coords = routeGeoJSON.geometry.coordinates;
-        let progress = 0;
-        const speed = 0.0018;
+        // Smooth Interpolation Animation along the route if live GPS has not arrived yet
+        if (!hasLiveGps) {
+          const coords = routeGeoJSON.geometry.coordinates;
+          let progress = 0;
+          const speed = 0.0018;
 
-        const animateMarker = () => {
-          progress = (progress + speed) % 1;
-          const totalSegments = coords.length - 1;
-          const pointIndex = Math.min(
-            Math.floor(progress * totalSegments),
-            totalSegments - 1
-          );
-          const segmentProgress = (progress * totalSegments) % 1;
+          const animateMarker = () => {
+            progress = (progress + speed) % 1;
+            const totalSegments = coords.length - 1;
+            const pointIndex = Math.min(
+              Math.floor(progress * totalSegments),
+              totalSegments - 1,
+            );
+            const segmentProgress = (progress * totalSegments) % 1;
 
-          const p1 = coords[pointIndex];
-          const p2 = coords[pointIndex + 1];
+            const p1 = coords[pointIndex];
+            const p2 = coords[pointIndex + 1];
 
-          const currentLng = p1[0] + (p2[0] - p1[0]) * segmentProgress;
-          const currentLat = p1[1] + (p2[1] - p1[1]) * segmentProgress;
+            const currentLng = p1[0] + (p2[0] - p1[0]) * segmentProgress;
+            const currentLat = p1[1] + (p2[1] - p1[1]) * segmentProgress;
 
-          riderMarker.setLngLat([currentLng, currentLat]);
+            riderMarker.setLngLat([currentLng, currentLat]);
 
-          animationFrameRef.current = requestAnimationFrame(animateMarker);
-        };
+            animationFrameRef.current = requestAnimationFrame(animateMarker);
+          };
 
-        animateMarker();
+          animateMarker();
+        }
 
         // Fit bounds comfortably
         const bounds = new mapboxgl.LngLatBounds();
-        coords.forEach((coord) => bounds.extend(coord));
+        routeGeoJSON.geometry.coordinates.forEach((coord) => bounds.extend(coord));
         map.fitBounds(bounds, { padding: 60 });
       });
     } catch (err) {
-      console.warn('Mapbox GL initialization error, falling back to CSS map:', err);
+      console.warn('Mapbox GL initialization error, falling back to radar view:', err);
       setMapError(true);
     }
 
@@ -203,28 +234,26 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
     };
   }, [isOpen]);
 
-  const toggleInstruction = (inst) => {
-    setSelectedInstructions((prev) =>
-      prev.includes(inst) ? prev.filter((i) => i !== inst) : [...prev, inst]
-    );
-    toast.success(`Instruction saved: "${inst}"`);
-  };
-
   const handleApplyTip = (amount) => {
     setSelectedTip(amount);
-    toast.success(`Thank you! ₹${amount} tip added for Vikram Singh`);
+    toast.success(`Thank you! ₹${amount} tip added for ${order?.deliveryBoy?.name || 'Vikram Singh'}`);
   };
 
   if (!isOpen) return null;
 
   const currentStageIndex =
     currentStatus === 'DELIVERED'
-      ? 3
+      ? 4
       : currentStatus === 'OUT_FOR_DELIVERY'
+      ? 3
+      : currentStatus === 'PICKED_UP'
       ? 2
       : currentStatus === 'PREPARING'
       ? 1
       : 0;
+
+  const riderName = order?.deliveryBoy?.name || order?.deliveryPartner?.name || 'Vikram Singh';
+  const riderPhone = order?.deliveryBoy?.phone || order?.deliveryPartner?.phone || '+91 98765 43210';
 
   return (
     <AnimatePresence>
@@ -272,7 +301,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
             </div>
 
             {/* Stage Progress Stepper */}
-            <div className="mt-5 grid grid-cols-4 gap-1.5 sm:gap-2">
+            <div className="mt-5 grid grid-cols-5 gap-1.5 sm:gap-2">
               {STAGES.map((stg, idx) => {
                 const isPassed = idx <= currentStageIndex;
                 const isCurrent = idx === currentStageIndex;
@@ -285,7 +314,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
                     />
                     <span className="text-sm">{stg.icon}</span>
                     <span
-                      className={`text-[10px] sm:text-[11px] font-bold mt-1 line-clamp-1 ${
+                      className={`text-[9px] sm:text-[11px] font-bold mt-1 line-clamp-1 ${
                         isCurrent
                           ? 'text-amber-300 font-black'
                           : isPassed
@@ -301,22 +330,45 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
             </div>
           </div>
 
+          {/* Real-Time Live Status Banner */}
+          {currentStatus === 'PICKED_UP' ? (
+            <div className="px-5 py-2.5 bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
+                <span>🛍️</span>
+                <span>Order Picked Up: Delivery partner is on the way!</span>
+              </div>
+              <span className="text-[10px] uppercase tracking-wider bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full">
+                En Route
+              </span>
+            </div>
+          ) : hasLiveGps || currentStatus === 'OUT_FOR_DELIVERY' ? (
+            <div className="px-5 py-2.5 bg-emerald-600 text-white font-black text-xs flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
+                <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-200" />
+                <span>Live GPS active: Partner is moving towards your location</span>
+              </div>
+              <span className="text-[10px] uppercase tracking-wider bg-emerald-950 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                Live Telemetry
+              </span>
+            </div>
+          ) : null}
+
           {/* 2. Mapbox GL Live Canvas */}
-          <div className="relative w-full h-[240px] sm:h-[280px] bg-slate-100 overflow-hidden">
+          <div className="relative w-full h-[230px] sm:h-[260px] bg-slate-100 overflow-hidden">
             {!mapError ? (
               <div ref={mapContainerRef} className="w-full h-full" />
             ) : (
               /* Fallback Animated Radar Map */
               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-100 to-emerald-50 p-6 text-center">
-                <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-emerald-100 border-2 border-emerald-300 shadow-inner mb-3">
-                  <span className="text-4xl animate-bounce">🛵</span>
+                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 border-2 border-emerald-300 shadow-inner mb-2">
+                  <span className="text-3xl animate-bounce">🛵</span>
                   <div className="absolute inset-0 rounded-full border-2 border-emerald-500 animate-ping opacity-30"></div>
                 </div>
-                <p className="font-display font-black text-slate-800 text-sm">
+                <p className="font-display font-black text-slate-800 text-xs">
                   Live Dispatch Radar Active
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Rider Vikram Singh is en-route with your fresh groceries
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Rider {riderName} is en-route with your fresh groceries
                 </p>
               </div>
             )}
@@ -324,11 +376,11 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
             {/* Floating Live Badge */}
             <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 shadow-md border border-slate-200/80 flex items-center gap-2 text-xs font-extrabold text-slate-800">
               <Navigation className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-              <span>GPS Tracking Connected</span>
+              <span>{hasLiveGps ? 'Live GPS Stream Active' : 'GPS Tracking Connected'}</span>
             </div>
           </div>
 
-          {/* 3. Swiggy Instamart Delivery Partner Card */}
+          {/* 3. Instamart Delivery Partner Card */}
           <div className="p-4 sm:p-5 overflow-y-auto space-y-4 bg-white flex-1">
             {/* Rider Info Strip */}
             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-slate-50 to-emerald-50/50 border border-slate-200/80">
@@ -345,21 +397,21 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
                 </div>
                 <div>
                   <h3 className="font-display font-black text-slate-900 text-sm">
-                    {order?.deliveryPartner?.name || 'Vikram Singh'}
+                    {riderName}
                   </h3>
                   <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-bold">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>Vaccinated & Temp Checked (36.4°C)</span>
                   </div>
                   <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                    {order?.deliveryPartner?.fleetNumber || 'KiranaHub Fleet #402'} • Electric Scooter
+                    KiranaHub Fleet #402 • Electric Scooter
                   </p>
                 </div>
               </div>
 
               {/* Call Partner Button */}
               <a
-                href={`tel:${order?.deliveryPartner?.phone || '9876543210'}`}
+                href={`tel:${riderPhone}`}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
               >
                 <Phone className="w-3.5 h-3.5 fill-current" />
@@ -367,34 +419,29 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
               </a>
             </div>
 
-            {/* Delivery Instructions Selector */}
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
-                Delivery Instructions
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'nobell', label: "Don't ring bell 🔕" },
-                  { id: 'door', label: 'Leave at door 🚪' },
-                  { id: 'security', label: 'Leave with security 🛡️' },
-                  { id: 'call', label: 'Call on arrival 📞' },
-                ].map((item) => {
-                  const isSelected = selectedInstructions.includes(item.label);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => toggleInstruction(item.label)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-emerald-100 border-emerald-500 text-emerald-900 shadow-2xs'
-                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {item.label} {isSelected && '✓'}
-                    </button>
-                  );
-                })}
+            {/* Delivery OTP & Instructions Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Delivery OTP Pill */}
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+                    Share with Rider on Delivery
+                  </span>
+                  <span className="text-xs font-bold text-slate-700">Delivery Confirmation OTP</span>
+                </div>
+                <span className="font-mono font-black text-lg text-emerald-700 bg-white px-3 py-1 rounded-xl shadow-xs border border-emerald-300">
+                  {order?.deliveryOtp || '9842'}
+                </span>
+              </div>
+
+              {/* Delivery Preferences Display */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  Your Delivery Instructions
+                </span>
+                <span className="text-xs font-bold text-slate-800">
+                  {order?.deliveryInstructions && (Array.isArray(order.deliveryInstructions) ? order.deliveryInstructions.join(' • ') : order.deliveryInstructions) || 'Leave at door'}
+                </span>
               </div>
             </div>
 
@@ -405,7 +452,7 @@ export default function LiveOrderTrackerModal({ order, isOpen, onClose }) {
                   Tip Your Delivery Partner
                 </span>
                 <span className="text-[11px] font-semibold text-amber-700">
-                  100% goes to Vikram
+                  100% goes to {riderName}
                 </span>
               </div>
               <div className="flex items-center gap-2">
