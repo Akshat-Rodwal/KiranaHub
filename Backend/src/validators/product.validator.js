@@ -4,12 +4,18 @@ const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const allowedSorts = [
   'name-asc',
+  'name_asc',
   'name-desc',
+  'name_desc',
   'price-asc',
+  'price_asc',
   'price-desc',
+  'price_desc',
   'rating-desc',
+  'rating_desc',
   'newest',
   'popular',
+  'popularity',
 ];
 
 export const validateProductSlugParam = (req, _res, next) => {
@@ -36,9 +42,13 @@ export const validateProductQuery = (req, _res, next) => {
       limit: { type: 'number', min: 1, max: 60, integer: true, default: 12 },
       search: { type: 'string', max: 120, default: '' },
       category: { type: 'string', max: 80, default: '' },
+      subCategory: { type: 'string', max: 80, default: '' },
       brand: { type: 'string', max: 80, default: '' },
       minPrice: { type: 'number', min: 0 },
       maxPrice: { type: 'number', min: 0 },
+      priceRange: { type: 'string', max: 40 },
+      rating: { type: 'number', min: 0, max: 5 },
+      minRating: { type: 'number', min: 0, max: 5 },
       inStock: { type: 'boolean' },
       sort: {
         type: 'string',

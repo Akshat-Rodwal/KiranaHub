@@ -85,11 +85,15 @@ const createOrder = async ({
 
   // Phase 3: Server-side Pricing Computation
   // Delivery is FREE for orders >= ₹499, otherwise ₹25. Handling fee is ₹2.
+  // Dynamic Tax & GST Breakdown: 2.5% CGST + 2.5% SGST
   const deliveryFee = subtotal >= 499 ? 0 : 25;
   const handlingFee = 2;
   const discount = 0;
+  const taxableAmount = subtotal;
+  const cgst = Math.round(subtotal * 0.025 * 100) / 100;
+  const sgst = Math.round(subtotal * 0.025 * 100) / 100;
   const parsedTip = typeof deliveryTip === 'number' ? Math.max(0, deliveryTip) : 0;
-  const grandTotal = subtotal + deliveryFee + handlingFee - discount + parsedTip;
+  const grandTotal = Math.round((subtotal + cgst + sgst + deliveryFee + handlingFee - discount + parsedTip) * 100) / 100;
 
   // Initial payment status is always PENDING until confirmed via Razorpay or paid on COD delivery
   const paymentStatus = 'PENDING';
@@ -108,6 +112,9 @@ const createOrder = async ({
     deliveryAddress,
     pricing: {
       subtotal,
+      taxableAmount,
+      cgst,
+      sgst,
       deliveryFee,
       handlingFee,
       discount,

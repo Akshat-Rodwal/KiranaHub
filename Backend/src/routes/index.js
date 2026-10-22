@@ -11,6 +11,8 @@ import paymentRouter from './payment.routes.js';
 import cartRouter from './cart.routes.js';
 import bundleRouter from './bundle.routes.js';
 import deliveryRouter from './delivery.routes.js';
+import userRouter from './user.routes.js';
+import shippingRouter from './shipping.routes.js';
 
 const router = express.Router();
 
@@ -57,5 +59,7 @@ router.use('/payments', paymentRouter);
 router.use('/cart', cartRouter);
 router.use('/bundles', bundleRouter);
 router.use('/delivery', deliveryRouter);
+router.use('/users', userRouter);
+router.use('/shipping', shippingRouter);
 
 export default router;

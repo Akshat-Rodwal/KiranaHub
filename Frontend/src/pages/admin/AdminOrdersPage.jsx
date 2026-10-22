@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminService from '../../services/admin.service.js';
+import orderService from '../../services/order.service.js';
 import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import Modal, { useModal } from '../../components/common/Modal.jsx';
@@ -22,6 +23,9 @@ const STATUS_BADGES = {
   OUT_FOR_DELIVERY: { variant: 'warning', label: 'Out for Delivery' },
   DELIVERED: { variant: 'success', label: 'Delivered' },
   CANCELLED: { variant: 'danger', label: 'Cancelled' },
+  RETURN_REQUESTED: { variant: 'warning', label: 'Return Requested' },
+  RETURNED: { variant: 'warning', label: 'Returned' },
+  REFUNDED: { variant: 'success', label: 'Refunded' },
 };
 
 const NEXT_STATUS_MAP = {
@@ -51,8 +55,61 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [shippingSlip, setShippingSlip] = useState(null);
+  const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
 
   const orderDetailModal = useModal('admin-order-detail-modal');
+
+  const handlePrintShippingLabel = async (orderId) => {
+    try {
+      setIsGeneratingLabel(true);
+      const res = await orderService.generateShippingLabel(orderId);
+      const labelData = res?.data || res;
+      setShippingSlip(labelData);
+    } catch (err) {
+      console.error('Failed to generate shipping label:', err);
+      toast.error('Could not generate shipping label', { description: err?.message });
+    } finally {
+      setIsGeneratingLabel(false);
+    }
+  };
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setIsDownloadingInvoice(true);
+      await orderService.downloadInvoice(orderId);
+      toast.success('Corporate Tax Invoice PDF generated');
+    } catch (err) {
+      console.error('Invoice download failed:', err);
+      toast.error('Invoice generation error', { description: err?.message });
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
+
+  const handleProcessRefund = async (orderId) => {
+    try {
+      setIsProcessingRefund(true);
+      await orderService.processRefund(orderId, {
+        adminNote: 'Admin processed return & stock replenishment',
+      });
+      toast.success('Refund Processed Successfully', {
+        description: 'Payment refunded via gateway/store credit and stock restored to inventory.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-analytics-overview'] });
+      if (selectedOrder && selectedOrder._id === orderId) {
+        setSelectedOrder((prev) => ({ ...prev, orderStatus: 'REFUNDED' }));
+      }
+    } catch (err) {
+      console.error('Refund processing error:', err);
+      toast.error('Could not process refund', { description: err?.message });
+    } finally {
+      setIsProcessingRefund(false);
+    }
+  };
 
   const {
     data: ordersRes,
@@ -515,6 +572,40 @@ export default function AdminOrdersPage() {
               </div>
             </div>
 
+            {/* Enterprise Logistics, Invoicing & Returns Actions */}
+            <div className="pt-3 border-t border-border flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  isLoading={isGeneratingLabel}
+                  onClick={() => handlePrintShippingLabel(selectedOrder._id)}
+                >
+                  📦 Print Shipping Label
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isLoading={isDownloadingInvoice}
+                  onClick={() => handleDownloadInvoice(selectedOrder._id)}
+                >
+                  📄 Download Tax Invoice (PDF)
+                </Button>
+              </div>
+
+              {selectedOrder.orderStatus === 'RETURN_REQUESTED' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  isLoading={isProcessingRefund}
+                  onClick={() => handleProcessRefund(selectedOrder._id)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  ⚡ Process Refund & Restock Inventory
+                </Button>
+              )}
+            </div>
+
             {/* Status Progress Action Footer */}
             {selectedOrder.orderStatus !== 'DELIVERED' && selectedOrder.orderStatus !== 'CANCELLED' && (
               <div className="pt-3 border-t border-border flex items-center justify-between">
@@ -537,6 +628,96 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </Modal>
+
+      {/* Printable Shipping Slip Modal */}
+      {shippingSlip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-stone-200 print:p-0 print:border-none print:shadow-none">
+            {/* Header with Carrier */}
+            <div className="flex items-center justify-between border-b pb-4 border-stone-200">
+              <div>
+                <span className="text-[10px] uppercase font-mono tracking-widest text-emerald-700 font-bold">
+                  {shippingSlip.carrier} Dispatch Slip
+                </span>
+                <h3 className="font-display font-black text-xl text-slate-900 mt-0.5">
+                  AWB: {shippingSlip.awb}
+                </h3>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-mono text-stone-400 block">WEIGHT / TIERS</span>
+                <span className="text-xs font-bold text-slate-800">{shippingSlip.weightGrams}g • Surface</span>
+              </div>
+            </div>
+
+            {/* Simulated Barcode */}
+            <div className="my-4 p-3 bg-stone-50 border border-stone-200 rounded-xl text-center">
+              <div className="font-mono text-2xl tracking-[0.3em] font-black text-slate-900 select-all">
+                {shippingSlip.barcode}
+              </div>
+              <span className="text-[10px] text-stone-500 font-mono tracking-wider">
+                TRACKING ID: {shippingSlip.awb}
+              </span>
+            </div>
+
+            {/* Addresses Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs my-4">
+              <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80">
+                <span className="font-bold text-[10px] uppercase text-emerald-800 tracking-wider block mb-1">
+                  SHIP FROM (HUB):
+                </span>
+                <p className="font-bold text-slate-800">{shippingSlip.sender?.hubName}</p>
+                <p className="text-stone-600">{shippingSlip.sender?.address}</p>
+                <p className="text-stone-600">
+                  {shippingSlip.sender?.city}, {shippingSlip.sender?.state} - {shippingSlip.sender?.pincode}
+                </p>
+                <p className="text-[11px] text-stone-500 mt-1">GSTIN: {shippingSlip.sender?.gstin}</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-stone-50 border border-stone-200/80">
+                <span className="font-bold text-[10px] uppercase text-emerald-800 tracking-wider block mb-1">
+                  SHIP TO (CUSTOMER):
+                </span>
+                <p className="font-bold text-slate-800">{shippingSlip.recipient?.name}</p>
+                <p className="text-stone-600">{shippingSlip.recipient?.addressLine1}</p>
+                {shippingSlip.recipient?.addressLine2 && (
+                  <p className="text-stone-600">{shippingSlip.recipient?.addressLine2}</p>
+                )}
+                <p className="text-stone-600">
+                  {shippingSlip.recipient?.city}, {shippingSlip.recipient?.state} - {shippingSlip.recipient?.pincode}
+                </p>
+                <p className="text-slate-800 font-bold mt-1">Phone: {shippingSlip.recipient?.phone}</p>
+              </div>
+            </div>
+
+            {/* Declared Value & Items Count */}
+            <div className="flex items-center justify-between py-3 border-t border-b border-stone-100 text-xs font-semibold">
+              <span className="text-stone-600">Total Items: {shippingSlip.items?.length || 0}</span>
+              <span className="text-slate-900 font-bold">
+                Declared Package Value: {formatPrice(shippingSlip.declaredValue)}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-4 print:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShippingSlip(null)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => window.print()}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                🖨️ Print Dispatch Slip
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,11 @@ const recalculate = (items, coupon = null) => {
   const deliveryFee = subtotal >= 499 ? 0 : (subtotal > 0 ? 25 : 0);
   const handlingFee = subtotal > 0 ? 2 : 0;
 
+  // Dynamic GST Breakdown: 2.5% CGST + 2.5% SGST
+  const taxableAmount = subtotal;
+  const cgst = subtotal > 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0;
+  const sgst = subtotal > 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0;
+
   let discount = 0;
   if (coupon && subtotal > 0) {
     if (coupon.type === 'percentage') {
@@ -24,10 +29,13 @@ const recalculate = (items, coupon = null) => {
     }
   }
 
-  const total = Math.max(0, subtotal + deliveryFee + handlingFee - discount);
+  const total = Math.max(0, Math.round((subtotal + cgst + sgst + deliveryFee + handlingFee - discount) * 100) / 100);
 
   return {
     subtotal,
+    taxableAmount,
+    cgst,
+    sgst,
     totalQuantity,
     deliveryFee,
     shipping: deliveryFee, // Alias for backward compatibility
@@ -41,6 +49,9 @@ const initialState = {
   items: [],
   totalQuantity: 0,
   subtotal: 0,
+  taxableAmount: 0,
+  cgst: 0,
+  sgst: 0,
   deliveryFee: 0,
   shipping: 0,
   handlingFee: 0,

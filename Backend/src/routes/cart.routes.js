@@ -1,8 +1,13 @@
 import express from 'express';
-import { reserveStock, releaseStock } from '../controllers/cartReservationController.js';
+import {
+  reserveStock,
+  releaseStock,
+  validateCart,
+} from '../controllers/cartReservationController.js';
 
 const router = express.Router();
 
+router.post('/validate', validateCart);
 router.post('/reserve-stock', reserveStock);
 router.post('/release-stock', releaseStock);
 

@@ -34,10 +34,25 @@ const loadRazorpayScript = () => {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { items, subtotal, deliveryFee, handlingFee, discount, total, clearCart } = useCartStore();
+  const {
+    items,
+    subtotal,
+    cgst: storeCgst,
+    sgst: storeSgst,
+    deliveryFee,
+    handlingFee,
+    discount,
+    total,
+    clearCart,
+  } = useCartStore();
+
+  const cgst = storeCgst ?? (subtotal > 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0);
+  const sgst = storeSgst ?? (subtotal > 0 ? Math.round(subtotal * 0.025 * 100) / 100 : 0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [cartAlerts, setCartAlerts] = useState([]);
+  const [hasBlockingErrors, setHasBlockingErrors] = useState(false);
 
   // 5-Minute Inventory Hold State
   const [cartToken] = useState(() => {
@@ -89,6 +104,41 @@ export default function CheckoutPage() {
       navigate(ROUTES.CART);
     }
   }, [items.length, navigate]);
+
+  // Live Cart Price & Stock Cross-Referencing
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    let isMounted = true;
+    const verifyLiveInventory = async () => {
+      try {
+        const payload = items.map((i) => ({
+          productId: i.productId || i.id,
+          name: i.name,
+          quantity: i.quantity,
+          price: i.sellingPrice || i.price,
+        }));
+        const response = await orderService.validateCart(payload);
+        const data = response?.data || response;
+        if (isMounted && data) {
+          if (data.alerts && data.alerts.length > 0) {
+            setCartAlerts(data.alerts);
+            setHasBlockingErrors(Boolean(data.hasBlockingErrors));
+          } else {
+            setCartAlerts([]);
+            setHasBlockingErrors(false);
+          }
+        }
+      } catch (err) {
+        console.warn('Live stock verification warning:', err?.message);
+      }
+    };
+
+    verifyLiveInventory();
+    return () => {
+      isMounted = false;
+    };
+  }, [items]);
 
   // Inventory Hold effect
   useEffect(() => {
@@ -195,6 +245,14 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (isSubmitting) return; // Prevent rapid double-clicks from firing concurrent create-order requests
     setErrorMessage('');
+
+    if (hasBlockingErrors) {
+      toast.error('Cart Requires Attention', {
+        description: 'One or more items in your cart are currently out of stock or unavailable. Please review line-item alerts before placing your order.',
+      });
+      return;
+    }
+
     if (!validateAddress()) {
       toast.error('Please complete the delivery address');
       return;
@@ -838,6 +896,29 @@ export default function CheckoutPage() {
                 Basket Summary
               </h2>
 
+              {/* Cart Price & Stock Verification Alerts */}
+              {cartAlerts.length > 0 && (
+                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-900 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-800 mb-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Real-Time Inventory & Price Update</span>
+                  </div>
+                  <div className="space-y-1">
+                    {cartAlerts.map((alt, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-start gap-1.5 font-medium ${
+                          alt.severity === 'error' ? 'text-rose-700 font-bold' : 'text-amber-800'
+                        }`}
+                      >
+                        <span className="shrink-0">•</span>
+                        <span>{alt.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Items List Preview */}
               <div className="space-y-3 max-h-56 overflow-y-auto pr-1 pb-3 border-b border-stone-100">
                 {items.map((item) => (
@@ -858,6 +939,14 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-slate-600 font-medium">
                   <dt>Items Subtotal</dt>
                   <dd className="font-bold text-slate-900">{formatPrice(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <dt>Central GST (CGST 2.5%)</dt>
+                  <dd className="font-bold text-slate-700">{formatPrice(cgst)}</dd>
+                </div>
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <dt>State GST (SGST 2.5%)</dt>
+                  <dd className="font-bold text-slate-700">{formatPrice(sgst)}</dd>
                 </div>
                 <div className="flex justify-between text-slate-600 font-medium">
                   <dt>Delivery Fee</dt>

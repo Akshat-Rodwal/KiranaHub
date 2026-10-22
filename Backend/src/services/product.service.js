@@ -8,12 +8,18 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const sortMap = {
   'name-asc': { name: 1 },
+  'name_asc': { name: 1 },
   'name-desc': { name: -1 },
+  'name_desc': { name: -1 },
   'price-asc': { price: 1 },
+  'price_asc': { price: 1 },
   'price-desc': { price: -1 },
+  'price_desc': { price: -1 },
   'rating-desc': { rating: -1, reviewCount: -1 },
+  'rating_desc': { rating: -1, reviewCount: -1 },
   newest: { createdAt: -1 },
-  popular: { reviewCount: -1, rating: -1 },
+  popular: { reviewCount: -1, rating: -1, createdAt: -1 },
+  popularity: { reviewCount: -1, rating: -1, createdAt: -1 },
 };
 
 const toProductDTO = (product) => {
@@ -44,6 +50,7 @@ const toProductDTO = (product) => {
     images: (product.images || []).map((img) => (typeof img === 'string' ? img : img.url)),
     category: categoryName,
     categorySlug,
+    subCategory: product.subCategory || '',
     brand: product.brand,
     unit: product.unit,
     price: product.price,
@@ -68,9 +75,13 @@ const toProductDTO = (product) => {
 const buildFilter = async ({
   search = '',
   category = '',
+  subCategory = '',
   brand = '',
   minPrice,
   maxPrice,
+  priceRange = '',
+  rating,
+  minRating,
   inStock,
   featured = false,
   bestSeller = false,
@@ -80,27 +91,70 @@ const buildFilter = async ({
 }) => {
   const filter = { isActive: true };
 
+  // Full-text search with regex scoring across name, description, brand, and tags
   if (search) {
-    const regex = new RegExp(escapeRegex(search), 'i');
-    filter.$or = [{ name: regex }, { brand: regex }, { tags: regex }];
+    const escaped = escapeRegex(search.trim());
+    const regex = new RegExp(escaped, 'i');
+    filter.$or = [
+      { name: regex },
+      { description: regex },
+      { shortDescription: regex },
+      { brand: regex },
+      { tags: regex },
+    ];
   }
 
   if (category) {
     filter.category = await resolveCategoryId(category);
   }
 
+  if (subCategory) {
+    const subRegex = new RegExp(escapeRegex(subCategory.trim()), 'i');
+    filter.$and = filter.$and || [];
+    filter.$and.push({
+      $or: [{ subCategory: subRegex }, { tags: subRegex }],
+    });
+  }
+
   if (brand) {
-    filter.brand = new RegExp(`^${escapeRegex(brand)}$`, 'i');
+    if (brand.includes(',')) {
+      const brands = brand
+        .split(',')
+        .map((b) => b.trim())
+        .filter(Boolean)
+        .map((b) => new RegExp(`^${escapeRegex(b)}$`, 'i'));
+      filter.brand = { $in: brands };
+    } else {
+      filter.brand = new RegExp(`^${escapeRegex(brand.trim())}$`, 'i');
+    }
   }
 
-  if (minPrice !== undefined || maxPrice !== undefined) {
+  // Price Range parsing: supports "min-max" string or minPrice / maxPrice numbers
+  let min = minPrice;
+  let max = maxPrice;
+  if (priceRange && typeof priceRange === 'string' && priceRange.includes('-')) {
+    const [pMin, pMax] = priceRange.split('-').map(Number);
+    if (!isNaN(pMin)) min = pMin;
+    if (!isNaN(pMax)) max = pMax;
+  }
+
+  if (min !== undefined || max !== undefined) {
     filter.price = {};
-    if (minPrice !== undefined) filter.price.$gte = minPrice;
-    if (maxPrice !== undefined) filter.price.$lte = maxPrice;
+    if (min !== undefined && !isNaN(Number(min))) filter.price.$gte = Number(min);
+    if (max !== undefined && !isNaN(Number(max))) filter.price.$lte = Number(max);
   }
 
-  if (inStock === true) {
+  // inStock boolean filtering
+  if (inStock === true || inStock === 'true' || inStock === 1 || inStock === '1') {
     filter.stock = { $gt: 0 };
+  } else if (inStock === false || inStock === 'false' || inStock === 0 || inStock === '0') {
+    filter.stock = { $eq: 0 };
+  }
+
+  // Rating filtering
+  const targetRating = rating !== undefined ? rating : minRating;
+  if (targetRating !== undefined && !isNaN(Number(targetRating))) {
+    filter.rating = { $gte: Number(targetRating) };
   }
 
   if (featured) filter.featured = true;
@@ -113,8 +167,8 @@ const buildFilter = async ({
 };
 
 const getProductList = async (query) => {
-  const page = query.page || 1;
-  const limit = query.limit || 12;
+  const page = parseInt(query.page, 10) || 1;
+  const limit = parseInt(query.limit, 10) || 12;
   const sort = sortMap[query.sort] || sortMap.popular;
 
   const filter = await buildFilter(query);
@@ -133,10 +187,17 @@ const getProductList = async (query) => {
     items: items.map(toProductDTO),
     pagination: {
       page,
+      currentPage: page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalProducts: total,
+      totalPages: Math.ceil(total / limit) || 1,
       hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+      count: items.length,
+    },
+  };
+};
       hasPrevPage: page > 1,
     },
   };

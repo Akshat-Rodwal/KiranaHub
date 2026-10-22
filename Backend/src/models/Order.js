@@ -103,6 +103,21 @@ const pricingSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    taxableAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    cgst: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    sgst: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     deliveryFee: {
       type: Number,
       required: true,
@@ -124,6 +139,117 @@ const pricingSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+    },
+  },
+  { _id: false },
+);
+
+const shippingSchema = new mongoose.Schema(
+  {
+    awb: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    carrier: {
+      type: String,
+      trim: true,
+      default: 'KiranaHub Express',
+    },
+    trackingUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    weightGrams: {
+      type: Number,
+      default: 500,
+      min: 0,
+    },
+    shippingFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    declaredValue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    labelGeneratedAt: {
+      type: Date,
+    },
+  },
+  { _id: false },
+);
+
+const returnItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+    },
+    name: { type: String, trim: true },
+    quantity: { type: Number, min: 1, default: 1 },
+    reason: { type: String, trim: true, default: '' },
+  },
+  { _id: false },
+);
+
+const returnRequestSchema = new mongoose.Schema(
+  {
+    reason: {
+      type: String,
+      trim: true,
+      default: 'Items damaged or wrong item delivered',
+    },
+    comments: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    items: [returnItemSchema],
+    status: {
+      type: String,
+      enum: ['REQUESTED', 'APPROVED', 'REJECTED', 'PROCESSED'],
+      default: 'REQUESTED',
+    },
+    requestedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false },
+);
+
+const refundSchema = new mongoose.Schema(
+  {
+    amount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    method: {
+      type: String,
+      enum: ['RAZORPAY', 'COD_CASH', 'WALLET', 'STORE_CREDIT', 'NONE'],
+      default: 'NONE',
+    },
+    razorpayRefundId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    status: {
+      type: String,
+      enum: ['PENDING', 'PROCESSED', 'FAILED'],
+      default: 'PENDING',
+    },
+    processedAt: {
+      type: Date,
+    },
+    restocked: {
+      type: Boolean,
+      default: false,
     },
   },
   { _id: false },
@@ -175,9 +301,22 @@ const orderSchema = new mongoose.Schema(
         'OUT_FOR_DELIVERY',
         'DELIVERED',
         'CANCELLED',
+        'RETURN_REQUESTED',
+        'RETURNED',
+        'REFUNDED',
       ],
       default: 'PENDING',
       index: true,
+    },
+    shipping: {
+      type: shippingSchema,
+      default: () => ({}),
+    },
+    returnRequest: {
+      type: returnRequestSchema,
+    },
+    refund: {
+      type: refundSchema,
     },
     expectedDeliveryTime: {
       type: String,

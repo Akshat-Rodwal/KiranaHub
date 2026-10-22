@@ -95,9 +95,107 @@ export const reserveStock = asyncHandler(async (req, res) => {
 });
 
 /**
- * POST /api/v1/cart/release-stock
- * Releases reserved inventory back to the general pool
+ * POST /api/v1/cart/validate
+ * Cross-references live product stock and price before checkout.
+ * Returns line-item discrepancies/alerts if price changed or stock depleted.
  */
+export const validateCart = asyncHandler(async (req, res) => {
+  const { items } = req.body;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(httpStatus.OK).json(
+      new ApiResponse(httpStatus.OK, 'Cart is empty', {
+        valid: true,
+        alerts: [],
+        items: [],
+      }),
+    );
+  }
+
+  const alerts = [];
+  const validatedItems = [];
+
+  for (const item of items) {
+    const rawRef = item.productId || item.product || item.id || item.slug;
+    const isObjectId = mongoose.Types.ObjectId.isValid(rawRef);
+    const query = isObjectId
+      ? { $or: [{ _id: rawRef }, { slug: rawRef }], isActive: true }
+      : { slug: rawRef, isActive: true };
+
+    const product = await Product.findOne(query);
+
+    if (!product) {
+      alerts.push({
+        type: 'UNAVAILABLE',
+        severity: 'error',
+        productId: rawRef,
+        name: item.name || 'Unknown item',
+        message: `"${item.name || rawRef}" is no longer available in store.`,
+      });
+      continue;
+    }
+
+    const livePrice = product.price;
+    const requestedPrice = item.price ?? item.sellingPrice;
+    if (requestedPrice !== undefined && Number(requestedPrice) !== Number(livePrice)) {
+      alerts.push({
+        type: 'PRICE_CHANGED',
+        severity: 'warning',
+        productId: product._id,
+        name: product.name,
+        oldPrice: requestedPrice,
+        newPrice: livePrice,
+        message: `Price for "${product.name}" updated from ₹${requestedPrice} to ₹${livePrice}.`,
+      });
+    }
+
+    const availableStock = product.stock;
+    const requestedQty = Number(item.quantity) || 1;
+
+    if (availableStock <= 0) {
+      alerts.push({
+        type: 'OUT_OF_STOCK',
+        severity: 'error',
+        productId: product._id,
+        name: product.name,
+        availableStock: 0,
+        message: `"${product.name}" is currently out of stock.`,
+      });
+    } else if (availableStock < requestedQty) {
+      alerts.push({
+        type: 'INSUFFICIENT_STOCK',
+        severity: 'warning',
+        productId: product._id,
+        name: product.name,
+        availableStock,
+        requestedQty,
+        message: `Only ${availableStock} units of "${product.name}" available (you requested ${requestedQty}).`,
+      });
+    }
+
+    validatedItems.push({
+      productId: product._id,
+      slug: product.slug,
+      name: product.name,
+      price: livePrice,
+      mrp: product.mrp || livePrice,
+      stock: availableStock,
+      inStock: availableStock > 0,
+      image: product.images?.[0]?.url || product.image || '',
+    });
+  }
+
+  const hasBlockingErrors = alerts.some((a) => a.severity === 'error');
+
+  return res.status(httpStatus.OK).json(
+    new ApiResponse(httpStatus.OK, 'Cart validation complete', {
+      valid: !hasBlockingErrors && alerts.length === 0,
+      hasBlockingErrors,
+      alerts,
+      items: validatedItems,
+    }),
+  );
+});
 export const releaseStock = asyncHandler(async (req, res) => {
   const { cartToken } = req.body;
 

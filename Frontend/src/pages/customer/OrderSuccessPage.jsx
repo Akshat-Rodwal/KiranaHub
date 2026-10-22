@@ -15,6 +15,18 @@ import { formatPrice } from '../../utils/index.js';
 export default function OrderSuccessPage() {
   const { orderId } = useParams();
   const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    try {
+      setIsDownloadingInvoice(true);
+      await orderService.downloadInvoice(orderId);
+    } catch (err) {
+      console.error('Failed to download invoice:', err);
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
 
   const { data: orderRes, isLoading } = useQuery({
     queryKey: ['order', orderId],
@@ -134,13 +146,21 @@ export default function OrderSuccessPage() {
           </div>
 
           {/* Action CTAs */}
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
             <button
               type="button"
               onClick={() => setIsTrackerOpen(true)}
               className="py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm tracking-wide shadow-brand hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>🛵 Track Live Delivery</span>
+            </button>
+            <button
+              type="button"
+              disabled={isDownloadingInvoice}
+              onClick={handleDownloadInvoice}
+              className="py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm tracking-wide shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <span>📄 {isDownloadingInvoice ? 'Downloading...' : 'Tax Invoice (PDF)'}</span>
             </button>
             <Button
               as={Link}

@@ -31,6 +31,9 @@ const STATUS_BADGES = {
   OUT_FOR_DELIVERY: { variant: 'sale', label: 'Out for Delivery' },
   DELIVERED: { variant: 'discount', label: 'Delivered' },
   CANCELLED: { variant: 'neutral', label: 'Cancelled' },
+  RETURN_REQUESTED: { variant: 'warning', label: 'Return Requested' },
+  RETURNED: { variant: 'warning', label: 'Returned' },
+  REFUNDED: { variant: 'discount', label: 'Refunded' },
 };
 
 const MILESTONES = [
@@ -152,6 +155,60 @@ export default function OrdersPage() {
   const [cancellingId, setCancellingId] = useState(null);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [payingOrderId, setPayingOrderId] = useState(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
+  const [returnModalOrder, setReturnModalOrder] = useState(null);
+  const [returnReason, setReturnReason] = useState('Items damaged or defective');
+  const [returnComments, setReturnComments] = useState('');
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+  const [isExportingData, setIsExportingData] = useState(false);
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setDownloadingInvoiceId(orderId);
+      await orderService.downloadInvoice(orderId);
+    } catch (err) {
+      console.error('Invoice download failed:', err);
+      toast.error('Failed to download invoice', { description: err?.message || 'Please try again.' });
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  };
+
+  const handleExportUserData = async () => {
+    try {
+      setIsExportingData(true);
+      await orderService.exportUserData();
+      toast.success('Your personal data archive has been downloaded (GDPR Portability)');
+    } catch (err) {
+      console.error('Data export error:', err);
+      toast.error('Could not export user data', { description: err?.message });
+    } finally {
+      setIsExportingData(false);
+    }
+  };
+
+  const handleSubmitReturn = async (e) => {
+    e.preventDefault();
+    if (!returnModalOrder) return;
+    try {
+      setIsSubmittingReturn(true);
+      await orderService.requestReturn(returnModalOrder._id || returnModalOrder.id, {
+        reason: returnReason,
+        comments: returnComments,
+      });
+      toast.success('Return Request Submitted', {
+        description: 'Our customer support team is reviewing your request.',
+      });
+      setReturnModalOrder(null);
+      setReturnComments('');
+      fetchOrders(page);
+    } catch (err) {
+      console.error('Return request failed:', err);
+      toast.error('Failed to submit return request', { description: err?.message });
+    } finally {
+      setIsSubmittingReturn(false);
+    }
+  };
 
   const fetchOrders = useCallback(async (targetPage = 1) => {
     try {
@@ -524,7 +581,15 @@ export default function OrdersPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={isExportingData}
+                onClick={handleExportUserData}
+                className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span>📥 {isExportingData ? 'Exporting...' : 'Export Data (GDPR)'}</span>
+              </button>
               <Button
                 variant="outline"
                 size="sm"
@@ -914,6 +979,40 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Order Actions: Invoice Download & Return Request */}
+                            <div className="mt-4 pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                              <button
+                                type="button"
+                                disabled={downloadingInvoiceId === orderId}
+                                onClick={() => handleDownloadInvoice(orderId)}
+                                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                              >
+                                <span>📄 {downloadingInvoiceId === orderId ? 'Generating...' : 'Download Tax Invoice (PDF)'}</span>
+                              </button>
+
+                              {order?.orderStatus === 'DELIVERED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setReturnModalOrder(order)}
+                                  className="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <span>🔄 Request Return</span>
+                                </button>
+                              )}
+
+                              {order?.orderStatus === 'RETURN_REQUESTED' && (
+                                <div className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl">
+                                  ⏳ Return Request Under Review
+                                </div>
+                              )}
+
+                              {order?.orderStatus === 'REFUNDED' && (
+                                <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+                                  ✅ Order Refunded • Stock Restored
+                                </div>
+                              )}
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -950,6 +1049,69 @@ export default function OrdersPage() {
           )}
         </div>
       </Container>
+
+      {/* Customer Return Request Modal */}
+      {returnModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200">
+            <h3 className="font-display font-black text-lg text-slate-900 mb-1">
+              Request Order Return
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Order #{returnModalOrder._id.slice(-6).toUpperCase()} • KiranaHub Freshness Guarantee
+            </p>
+
+            <form onSubmit={handleSubmitReturn} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Reason for Return
+                </label>
+                <select
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-stone-200 p-2.5 bg-stone-50 focus:bg-white focus:outline-emerald-600 font-medium"
+                >
+                  <option value="Items damaged or defective">Items damaged or defective</option>
+                  <option value="Expired or poor freshness quality">Expired or poor freshness quality</option>
+                  <option value="Wrong item delivered">Wrong item delivered</option>
+                  <option value="Missing items in packet">Missing items in packet</option>
+                  <option value="Other / Changed mind">Other / Changed mind</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Additional Details / Comments
+                </label>
+                <textarea
+                  rows={3}
+                  value={returnComments}
+                  onChange={(e) => setReturnComments(e.target.value)}
+                  placeholder="Please describe which item was damaged or issues with freshness..."
+                  className="w-full text-xs rounded-xl border border-stone-200 p-2.5 bg-stone-50 focus:bg-white focus:outline-emerald-600 font-medium"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReturnModalOrder(null)}
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 font-bold text-xs hover:bg-stone-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReturn}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingReturn ? 'Submitting...' : 'Submit Return Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Live Order Tracker Modal */}
       <LiveOrderTrackerModal

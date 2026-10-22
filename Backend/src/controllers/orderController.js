@@ -2,6 +2,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import httpStatus from '../constants/httpStatus.js';
 import orderService from '../services/order.service.js';
+import { generateInvoicePDF } from '../services/invoice.service.js';
 
 const createOrder = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.user?.id;
@@ -70,11 +71,29 @@ const cancelCustomerOrder = asyncHandler(async (req, res) => {
     );
 });
 
+const downloadInvoice = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user?._id || req.user?.id;
+  const userRole = req.user?.role || 'customer';
+
+  // Verify access authorization
+  await orderService.getOrderById(id, userId, userRole);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="KiranaHub-Invoice-${id.slice(-6).toUpperCase()}.pdf"`,
+  );
+
+  await generateInvoicePDF(id, res);
+});
+
 export {
   createOrder,
   cancelCustomerOrder,
   getMyOrders,
   getOrderById,
+  downloadInvoice,
 };
 
 export default {
@@ -82,4 +101,5 @@ export default {
   cancelCustomerOrder,
   getMyOrders,
   getOrderById,
+  downloadInvoice,
 };
