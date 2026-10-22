@@ -198,10 +198,6 @@ const getProductList = async (query) => {
     },
   };
 };
-      hasPrevPage: page > 1,
-    },
-  };
-};
 
 const getProductBySlug = async (slugOrId) => {
   const isObjectId = mongoose.Types.ObjectId.isValid(slugOrId);
